@@ -3,24 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="{{ url_for('static', filename='bootstrap/bootstrap.min.css') }}" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    <title>LMS</title>
+    
+    <link href="{{ url_for('static', filename='bootstrap/bootstrap.min.css') }}" rel="stylesheet">
+    {% if title %}
+        <title>{{ title }}</title>
+    {% else %}
+        <title>LMS</title>
+    {% endif %}
 </head>
 <body>
     <div class="container justify-content-center">
-        <div class="navbar navbar-expand-sm">
-            <div class="navbar-brand">
-                LMS
-            </div>
-            <div class="navbar-nav">
-                <a href="#">Lectures</a>
+        
+        <div class="pt-3 bg-light">
+            <div class="row">
+                <div class="col-sm-4">
+                    <ul class="nav ms-1">
+    
+                        <li class="nav-item">
+                            <a href="#">
+                                <button type="button" class="btn btn-primary active me-1">Лабораторные работы</button> </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-outline-light text-dark me-1" href="#">Лекции</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-outline-light text-dark" href="#">Инструкции</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-sm-4 ">
+                    <div class="d-flex justify-content-center">
+                        <div class="pic">
+                            <a href="#"> 
+                                <img src="{{ url_for('static', filename='png/logo.png') }}" alt="" >
+                                
+                            </a>
+                        </div>
+                        <div class="label">
+                            <h6 class="text-center">ffff</h6>
+                        </div>
+                        
+                    </div>
+                    
+                </div>
+                <div class="col-sm-4">
+                    <ul class="nav justify-content-end me-1">
+                        <li class="nav-item">
+                            <a class="btn btn-outline-dark me-1" href="#">Войти</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-outline-dark" href="#">Регистрация</a>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
+        
+                
+                
+               
+                
+            
+          
+          
         {% block content %}
             
         {% endblock %}
     </div>
     
-    <script src="{{ url_for('static', filename='bootstrap/bootstrap.bundle.min.js') }}" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='bootstrap/bootstrap.bundle.min.js') }}"></script>
 </body>
 </html>
