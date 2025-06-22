@@ -1,1 +1,5 @@
-# web forms classes will be here later
+from flask_wtf import FlaskForm
+from wtforms import SubmitField
+
+class EmptyForm(FlaskForm):
+    submit = SubmitField("Submit")
