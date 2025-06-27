@@ -5,11 +5,18 @@
         Выполняется {{ lab.name }}
     {% endif %}
     <div class="lab">
-        <h6>{{ lab.name }}</h6>
-       
-        <form action="{{ url_for('lab_start', lab_id=lab.id) }}" method="POST">
-            {{ form.hidden_tag() }}
-            {{ form.submit(value='Начать выполнение') }}
-        </form>
+        <a href="{{url_for('lab_room', lab_id=lab.id) }}"><h6>{{ lab.name }}</h6></a>
+        {% if lab.started %}
+            <form action="{{ url_for('lab_finish', lab_id=lab.id) }}" method="POST">
+                {{ form.hidden_tag() }}
+                {{ form.submit(value='Завершить') }}
+            </form>
+        {% else %}
+            <form action="{{ url_for('lab_start', lab_id=lab.id) }}" method="POST">
+                {{ form.hidden_tag() }}
+                {{ form.submit(value='Начать выполнение') }}
+            </form>
+        {% endif %}
+        
     </div>
 {% endblock %}

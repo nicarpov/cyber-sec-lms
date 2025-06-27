@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    {{ lab.name }}
+    <label for="">Статус системы</label>
+    {% if lab.is_ready %}
+        <span id="status_badge" class="badge bg-success">Система готова</span>
+    {% else %}
+        <span id="status_badge" class="badge bg-secondary">Система не готова</span>
+    {% endif %}
+    <script>
+        let socket = new WebSocket("ws://localhost:5000/ws/message");
+        let status_badge = document.getElementById("status_badge")
+        socket.onopen = function(e) {
+            socket.send("WAITING")
+          };
+          
+          socket.onmessage = function(event) {
+            if(event.data == "READY"){
+                status_badge.classList.remove("bg-secondary");
+                status_badge.classList.add("bg-success");
+                status_badge.textContent = "Система готова";
+            }
+          };
+          
+          socket.onclose = function(event) {
+            if (event.wasClean) {
+              alert(`[close] Соединение закрыто чисто, код=${event.code} причина=${event.reason}`);
+            } else {
+              // например, сервер убил процесс или сеть недоступна
+              // обычно в этом случае event.code 1006
+              alert('[close] Соединение прервано');
+            }
+          };
+          
+          socket.onerror = function(error) {
+            alert(`[error]`);
+          };
+    </script>
+{% endblock %}
