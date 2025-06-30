@@ -1,7 +1,11 @@
 {% extends 'base.html' %}
 
 {% block content %}
-
+    <div class="lab-list mt-4">
+        <h3 class="text-black">Список лабораторных работ</h3>
+        {% for lab in labs %}
+            {% include '_lab_card.html'   %}
+        {% endfor %}
+    </div>
     
-
 {% endblock %}

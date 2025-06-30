@@ -1,0 +1,27 @@
+<div class="lab mb-2 bg-light">
+    <a href="{{ url_for('lab_room', lab_id=lab.id) }}" class="text-decoration-none"><h6>{{ lab.name }}</h6></a>
+    <div class="controls d-flex">
+
+            <form action="{{ url_for('lab_backup', lab_id=lab.id) }}" method="POST" class="me-2">
+                {{ form.hidden_tag() }}
+                {{ form.submit(value='Сохранить') }}
+            </form>
+            <form action="{{ url_for('lab_finish', lab_id=lab.id) }}" method="POST" class="me-2">
+                {{ form.hidden_tag() }}
+                {{ form.submit(value='Завершить') }}
+            </form>
+        
+            <form action="{{ url_for('lab_start', lab_id=lab.id) }}" method="POST">
+                {{ form.hidden_tag() }}
+                {{ form.submit(value='Начать выполнение') }}
+            </form>
+        
+    </div>
+    
+    <script>
+        submits = document.getElementsByName('submit')
+        for (let el of submits){
+            el.classList.add('btn', 'btn-dark', 'btn-sm')
+        }
+    </script>
+</div>
