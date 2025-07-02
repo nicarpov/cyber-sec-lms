@@ -11,7 +11,12 @@ user = 'arapov'
 config = Config(overrides={'sudo': {'password': '1opoWE_vdo'}})
 
 
-def backup(host: str, comment: str, backup_dir: str, link_path: str = None):
+def backup(conn: Connection, comment: str, backup_dir: str, link_path: str = None):
+    """Makes backup of files in Linux-based system
+    
+    conn
+        SSH connection object returned from Connection func of Fabric library
+    """
     uid = str(uuid4())
     
     if backup_dir[-1] != '/':
@@ -35,7 +40,7 @@ def backup(host: str, comment: str, backup_dir: str, link_path: str = None):
     except Exception as err:
         print(err)
     return {"backup_id": uid,
-            "host": host,
+            "host": conn.host,
             "backup_cmd": backup_cmd,
             "link_path": link_path or "",
             "path": path,
