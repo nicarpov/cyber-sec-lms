@@ -27,4 +27,5 @@ build-backend = "poetry.core.masonry.api"
 package-mode = false
 [tool.poetry.group.dev.dependencies]
 eventlet = "^0.40.1"
+pytest = "^8.4.1"
 
