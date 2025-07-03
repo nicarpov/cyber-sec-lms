@@ -3,12 +3,13 @@ from fabric import Connection, Config
 import os
 from pathlib import Path
 from sys import platform
+from remote_ctl_config import PKEY_PATH
 
-host = '192.168.0.119'
+host = '192.168.1.12'
 # host_remote = '89.109.5.245'
-port = 8020
-user = 'arapov'
-config = Config(overrides={'sudo': {'password': '1opoWE_vdo'}})
+port = 22
+user = 'remote'
+config = Config(overrides={'sudo': {'password': '123'}})
 
 
 def backup(conn: Connection, comment: str, backup_dir: str, link_path: str = None):
@@ -30,8 +31,8 @@ def backup(conn: Connection, comment: str, backup_dir: str, link_path: str = Non
     link_option = " --link-dest={}"
     link_dest = link_option.format(link_path) if link_path else ''
     backup_cmd = "rsync -aAXv --rsync-path='mkdir {path}' --progress --exclude={{'{backup_dir}*','/dev/*','/proc/*','/sys/*','/tmp/*','/run/*','/mnt/*','/media/*','/lost+found'}}{link_dest} / {path}".format(backup_dir=backup_dir, path=path, link_dest=link_dest)
-    # conn = Connection(host=host, user=user, port=22, config=config)
-    # result = conn.run('pwd', hide=True)
+    
+    result = conn.run('pwd', hide=True)
     # print(result.stdout)
     try:
         # result = conn.sudo(backup_cmd, hide=True)
@@ -46,3 +47,22 @@ def backup(conn: Connection, comment: str, backup_dir: str, link_path: str = Non
             "path": path,
             "comment": comment,
             }
+
+
+def main():
+
+    with Connection(
+        host=host, 
+        user=user, 
+        port=22, 
+        config=config, 
+        connect_kwargs={
+            "key_filename": PKEY_PATH
+            }
+    ) as conn:
+        res = backup(conn, "test", "/backup")
+        print(res)
+
+
+if __name__ == "__main__":
+    main()

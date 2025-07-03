@@ -3,6 +3,10 @@ import time
 from celery.result import AsyncResult
 from celeryconfig import CELERY
 
+
+
+
+
 celery_app = Celery('tasks', 
             # broker='pyamqp://guest@192.168.0.134/', 
             # broker='redis://192.168.0.134:6379/0',
@@ -23,10 +27,9 @@ def add(x, y):
 
 
 @celery_app.task
-def backup(host: str, comment: str):
+def backup(host: str, comment: str, path: str, link: str = None):
     time.sleep(3)
-    backup_id = "1123"
-    return {"backup_id": backup_id,
+    return {"backup_id": 1,
             "host": host,
             "comment": comment,
             }
