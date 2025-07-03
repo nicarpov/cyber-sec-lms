@@ -32,25 +32,37 @@ def backup(conn: Connection, comment: str, backup_dir: str, link_path: str = Non
     link_dest = link_option.format(link_path) if link_path else ''
     backup_cmd = "rsync -aAXv --rsync-path='mkdir {path}' --progress --exclude={{'{backup_dir}*','/dev/*','/proc/*','/sys/*','/tmp/*','/run/*','/mnt/*','/media/*','/lost+found'}}{link_dest} / {path}".format(backup_dir=backup_dir, path=path, link_dest=link_dest)
     
-    result = conn.run('pwd', hide=True)
-    # print(result.stdout)
+    
+    
     try:
-        # result = conn.sudo(backup_cmd, hide=True)
-        # print(result.stdout)
-        pass
+        result = conn.sudo(backup_cmd, hide=True)
+        
+        
     except Exception as err:
-        print(err)
+        return {"backup_id": uid,
+            "host": conn.host,
+            "backup_cmd": backup_cmd,
+            "link_path": link_path or "",
+            "path": path,
+            "comment": comment,
+            "cmd_result": '',
+            "cmd_error": repr(err),
+            "cmd_code": 1
+            }
+    
     return {"backup_id": uid,
             "host": conn.host,
             "backup_cmd": backup_cmd,
             "link_path": link_path or "",
             "path": path,
             "comment": comment,
+            "cmd_error": result.stderr,
+            "cmd_code": result.exited
             }
 
 
 def main():
-
+    print(f"Connect using {PKEY_PATH}")
     with Connection(
         host=host, 
         user=user, 
