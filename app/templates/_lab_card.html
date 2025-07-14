@@ -2,19 +2,21 @@
     <a href="{{ url_for('lab_room', lab_id=lab.id) }}" class="text-decoration-none"><h6>{{ lab.name }}</h6></a>
     <div class="controls d-flex">
 
-            <form action="{{ url_for('lab_backup', lab_id=lab.id) }}" method="POST" class="me-2">
+            <!-- <form action="{{ url_for('lab_backup', lab_id=lab.id) }}" method="POST" class="me-2">
                 {{ form.hidden_tag() }}
                 {{ form.submit(value='Сохранить') }}
-            </form>
+            </form> -->
             <form action="{{ url_for('lab_finish', lab_id=lab.id) }}" method="POST" class="me-2">
                 {{ form.hidden_tag() }}
                 {{ form.submit(value='Завершить') }}
             </form>
-        
-            <form action="{{ url_for('lab_start', lab_id=lab.id) }}" method="POST">
+            
+                <form action="{{ url_for('lab_start', lab_id=lab.id) }}" method="POST">
                 {{ form.hidden_tag() }}
                 {{ form.submit(value='Начать выполнение') }}
-            </form>
+                </form> 
+            
+            
         
     </div>
     

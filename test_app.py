@@ -1,5 +1,10 @@
 from app.remote_control import backup, restore
+import dotenv
+import os
 
+dotenv.load_dotenv()
+
+MOCKED=os.environ.get('MOCKED') or 1
 
 # {"backup_id": uid,
 #             "host": host,

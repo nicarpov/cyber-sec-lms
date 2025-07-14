@@ -3,9 +3,12 @@ from flask import render_template, redirect, url_for
 from app.forms import EmptyForm
 from app.models import labs, current_lab, task_id, hosts
 from app import sock
-from tasks import celery_app, add, backup
+from tasks import celery_app, add, backup, restore
 from celery import group
 from celery.result import AsyncResult
+from test_app import MOCKED
+from uuid import uuid4
+import time
 
 @app.route('/')
 @app.route('/index')
@@ -22,9 +25,13 @@ def lab_backup(lab_id):
     
     if form.validate_on_submit:
         comment = "TEST"
-        job = group(backup.s(host, comment) for host in hosts)
-        r = job.delay()
-        task_id.append(r.id)
+        if MOCKED:
+            r_id = str(uuid4())
+            task_id.append(r_id)
+        else:
+            job = group(backup.s(host, comment) for host in hosts)
+            r = job.delay()
+            task_id.append(r.id)
         return redirect(url_for('lab_room', lab_id=lab_id))
 
 
@@ -36,9 +43,16 @@ def lab_start(lab_id):
     print(current_lab)
     form = EmptyForm()
     if form.validate_on_submit:
-            current_lab['started'] = True 
-            r = add.delay(1, 2)
-            task_id.append(r.id)
+            current_lab['started'] = True
+            backup_ids = ["123", "234", "345"] # TO-DO: get hosts backup ids for lab 
+            if MOCKED:
+                r_id = str(uuid4())
+                task_id.append(r_id)
+                print("Task ID added: ", r_id)
+            else:
+                job = group([restore.s(host, id) for host, id in zip(hosts, backup_ids)])
+                r = job.delay()
+                task_id.append(r.id)
             return redirect(url_for('lab_room', lab_id=lab_id))
 
 @app.route('/lab/finish/<lab_id>', methods=['POST'])
@@ -70,7 +84,12 @@ def message(ws):
             print("WAITING")
             
             while task_id:
-                for id in task_id:
+                id = task_id[-1]
+
+                if MOCKED:
+                    time.sleep(10)
+                    task_id.remove(id)
+                else:
                     r = AsyncResult(id=id, app=celery_app)
                     if r.ready():
                         task_id.remove(id)
