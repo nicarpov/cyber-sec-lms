@@ -45,7 +45,7 @@ def restore(host: str, backup_id: str):
 if __name__ == "__main__":
     task = add.delay(1, 1)
     print(task.id)
-    
+    task_ids = celery_app
     # result = AsyncResult(id=task.id)
     # result = AsyncResult(id='7880d386-3393-42bb-85e5-aff10d06c6eb')
     # print(f"Task ID: {result.id}")

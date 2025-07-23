@@ -196,3 +196,4 @@ cython_debug/
 #custom
 .python-version
 test.py
+app/static/manuals/*
