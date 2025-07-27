@@ -9,13 +9,21 @@ from celery.result import AsyncResult
 from test_app import MOCKED
 from uuid import uuid4
 import time
+import json
+from app.data_access import redis_conn
 
 @app.route('/')
 @app.route('/index')
 def index():
-    form = EmptyForm()
+    
+    # form = EmptyForm()
+    lab_list = []
+    for id in labs:
+        lab = labs[id]
+        lab['id'] = id
+        lab_list.append(lab)
+    return render_template('index.html', labs=lab_list)
 
-    return render_template('index.html', labs=labs, form=form)
 
 
 @app.route('/lab/backup/<lab_id>', methods=['POST'])
@@ -37,30 +45,44 @@ def lab_backup(lab_id):
 
 @app.route('/lab/start/<lab_id>', methods=['POST'])
 def lab_start(lab_id):
-    print(f"LAB ID: {lab_id}")
-    f = lambda l: int(l['id']) == int(lab_id)
-    current_lab = list(filter(f, labs))[0]
-    print(current_lab)
+
     form = EmptyForm()
     if form.validate_on_submit:
-            current_lab['started'] = True
-            backup_ids = ["123", "234", "345"] # TO-DO: get hosts backup ids for lab 
-            if MOCKED:
-                r_id = str(uuid4())
-                task_id.append(r_id)
-                print("Task ID added: ", r_id)
-            else:
-                job = group([restore.s(host, id) for host, id in zip(hosts, backup_ids)])
-                r = job.delay()
-                task_id.append(r.id)
-            return redirect(url_for('lab_room', lab_id=lab_id))
+            
+        # backup_ids = ["123", "234", "345"] # TO-DO: get hosts backup ids for lab 
+        if MOCKED:
+            hosts = [1, 2, 3, 4]
+            backup_ids = [ 2, 3, 4, 5]
+            job = group([add.s(host, id) for host, id in zip(hosts, backup_ids)])
+            r = job.delay()
+            
+            with redis_conn() as conn:
+                conn.hset('job_state', mapping={
+                    'result_id': r.id,
+                    'status': 'loading',
+                    'lab_id': str(lab_id)
+                })
+            
+        else:
+            # job = group([restore.s(host, id) for host, id in zip(hosts, backup_ids)])
+            # r = job.delay()
+            # task_id.append(r.id)
+            
+            # if нет задач backup и restore:
+            #   1. Получить список хосты и пути к бекапам для лабы с данным id включая сам ноут
+            #   2. Отправить на celery группу задач по восстановлению бекапов
+            #   3. Положить id задачи в redis
+            pass
+        form = EmptyForm()
+        return redirect(url_for('lab_room', lab_id=lab_id))
 
 @app.route('/lab/finish/<lab_id>', methods=['POST'])
 def lab_finish(lab_id):
     
     form = EmptyForm()
     if form.validate_on_submit:
-            current_lab['started'] = False 
+            global current_lab
+            current_lab = {}
             return redirect(url_for('lab_room', lab_id=lab_id))
 
 # @app.route('/lab_manual/<lab_id>')
@@ -71,30 +93,67 @@ def lab_finish(lab_id):
 @app.route("/lab/room/<lab_id>")
 def lab_room(lab_id):
     # lab['id'] = lab_id
-    lab = labs[0]
-    return render_template("lab_room.html", lab=lab)
-
-@sock.route('/ws/message')
-def message(ws):
     
-    while True:
-        
-        msg = ws.receive()
-        if msg == "WAITING":
-            print("WAITING")
+    lab = labs[lab_id]
+    lab['id'] = lab_id
+    
+    form = EmptyForm()
+    return render_template("lab_room.html", lab=lab, form=form, current_lab=current_lab)
+
+@app.route("/lab/manual/<lab_id>")
+def lab_manual(lab_id):
+    # lab['id'] = lab_id
+    
+    lab = labs[lab_id]
+    lab['id'] = lab_id
+    
+    form = EmptyForm()
+    return render_template("lab_manual.html", lab=lab, form=form, current_lab=current_lab)
+
+
+
+@sock.route('/ws/job_state')
+def job_state(ws):
+    '''
+    redis key - "job_state"
+    state = {
+    'result_id' : uuid,
+    'status': loading|ready,
+    'lab_id': 123
+    }
+    '''
+    state = {}
+    
+    with redis_conn() as conn:
+        state = conn.hgetall('job_state')
+        print(state)
+        if state:
+            result_id = state['result_id']
+            r = celery_app.AsyncResult(result_id)
+            status = ''
+            if r.ready():
+                conn.delete('job_state')
+                status = 'ready'
+                
+            else:
+                status = 'loading'
+            state['status'] = status
             
-            while task_id:
-                id = task_id[-1]
-
-                if MOCKED:
-                    time.sleep(10)
-                    task_id.remove(id)
-                else:
-                    r = AsyncResult(id=id, app=celery_app)
-                    if r.ready():
-                        task_id.remove(id)
-
-            print("READY")
-            ws.send("READY")
-
-    
+            
+    ws.send(json.dumps(state))
+    while True:
+        time.sleep(1)
+        if state:
+            result_id = state['result_id']
+            r = celery_app.AsyncResult(result_id)
+            status = ''
+            # print(r.state)
+            if r.ready():
+                print("READY")
+                with redis_conn() as conn:
+                    conn.delete('job_state')
+                status = 'ready'
+                state['status'] = status
+                ws.send(json.dumps(state))
+            
+            

@@ -1,40 +1,44 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    {{ lab.name }}
-    <label for="">Статус системы</label>
-    {% if lab.is_ready %}
-        <span id="status_badge" class="badge bg-success">Система готова</span>
-    {% else %}
-        <span id="status_badge" class="badge bg-secondary">Система не готова</span>
-    {% endif %}
-    <script>
-        let socket = new WebSocket("ws://localhost:5000/ws/message");
-        let status_badge = document.getElementById("status_badge")
-        socket.onopen = function(e) {
-            socket.send("WAITING")
-          };
-          
-          socket.onmessage = function(event) {
-            if(event.data == "READY"){
-                status_badge.classList.remove("bg-secondary");
-                status_badge.classList.add("bg-success");
-                status_badge.textContent = "Система готова";
-            }
-          };
-          
-          socket.onclose = function(event) {
-            if (event.wasClean) {
-              alert(`[close] Соединение закрыто чисто, код=${event.code} причина=${event.reason}`);
-            } else {
-              // например, сервер убил процесс или сеть недоступна
-              // обычно в этом случае event.code 1006
-              alert('[close] Соединение прервано');
-            }
-          };
-          
-          socket.onerror = function(error) {
-            alert(`[error]`);
-          };
-    </script>
+    <div class="d-flex flex-column room mt-5">
+        <div class="d-flex justify-content-between">
+            <div class="back-btn mb-5">
+                <a href="{{ url_for('index') }}">
+                    <button type="button" class="btn btn-primary"> << К списку работ </button>
+                </a>
+            </div>
+            <div class="lab-name h3 ms-2">
+                {{ lab.name }}
+            </div>
+            
+            
+        </div>
+             
+        <div id="loading-alert" class="alert alert-danger hidden">
+            <strong>ОСТОРОЖНО!</strong> Выполняется подготовка систем. 
+            Не отключайте питание устройств. 
+        </div>
+            
+
+            <!-- <embed src="{{ url_for('static', filename=current_lab.manual_path)}}" type="application/pdf" height="600px"> -->
+        
+        <div id="start-alert" class="alert alert-warning hidden">
+            <strong>ВНИМАНИЕ!</strong> После нажатия кнопки "Начать" запустится процесс подготовки системы к выполнению лабораторной работы. 
+            <br>Весь прогресс предыдущих работ будет потерян.
+            <br>Убедитесь, что ноутбук включен в розетку и заражается.
+            <br><strong>НЕ ВЫКЛЮЧАЙТЕ</strong> компьютер и питание учебной платформы до завершения процесса. 
+        </div>
+        <div id="start-btn" class="start-btn mb-5 hidden">
+            <form  action="{{ url_for('lab_start', lab_id=lab.id) }}" method="post">
+                {{ form.hidden_tag() }}
+                {{ form.submit(value="Начать", class="btn btn-success btn-lg") }}
+            </form>
+            
+        </div>
+        
+        
+    </div>
+    
+    <script type="module" src="{{ url_for('static', filename='js/lab_room.js')}}"></script>
 {% endblock %}

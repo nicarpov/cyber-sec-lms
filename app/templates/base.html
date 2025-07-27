@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <link href="{{ url_for('static', filename='bootstrap/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     {% if title %}
         <title>{{ title }}</title>
     {% else %}
@@ -12,60 +13,8 @@
     {% endif %}
 </head>
 <body>
-    <div class="container justify-content-center">
-        
-        <!-- <div class="pt-3 bg-light">
-            <div class="row">
-                <div class="col-sm-4">
-                    <ul class="nav ms-1">
-    
-                        <li class="nav-item">
-                            <a href="{{ url_for('index')}}">
-                                <button type="button" class="btn btn-primary active me-1">Лабораторные работы</button> </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="btn btn-outline-light text-dark me-1" href="#">Лекции</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="btn btn-outline-light text-dark" href="#">Инструкции</a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="col-sm-4 ">
-                    <div class="d-flex justify-content-center">
-                        <div class="pic">
-                            <a href="{{ url_for('index')}}"> 
-                                <img src="{{ url_for('static', filename='png/logo.png') }}" alt="" >
-                                
-                            </a>
-                        </div>
-                        <div class="label">
-                            <h6 class="text-center">ffff</h6>
-                        </div>
-                        
-                    </div>
-                    
-                </div>
-                <div class="col-sm-4">
-                    <ul class="nav justify-content-end me-1">
-                        <li class="nav-item">
-                            <a class="btn btn-outline-dark me-1" href="#">Войти</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="btn btn-outline-dark" href="#">Регистрация</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-        
-        {% include '_lab_player.html' %} -->
-                
-                
-               
-                
-            
-          
+    <div id="container" class="container justify-content-center">
+  
           
         {% block content %}
             
@@ -74,5 +23,6 @@
     </div>
     
     <script src="{{ url_for('static', filename='bootstrap/bootstrap.bundle.min.js') }}"></script>
+    <script src=" {{ url_for('static', filename='js/stateMonitoring.js')}}"></script>
 </body>
 </html>
