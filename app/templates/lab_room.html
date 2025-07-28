@@ -32,10 +32,24 @@
             <br>Убедитесь, что ноутбук включен в розетку и заражается.
             <br><strong>НЕ ВЫКЛЮЧАЙТЕ</strong> компьютер и питание учебной платформы до завершения процесса. 
         </div>
-        <div id="start-btn" class="start-btn mb-5 hidden">
+        <div id="reboot-alert" class="alert alert-warning hidden">
+            Подготовка почти завершена. Нажмите кнопку "Перезагрузить". Выполнится перезагрузка ноутбука. 
+            После перезагрузки войдите в систему и приступите к выполнению работы. 
+        </div>
+        <div id="reboot-eta-alert" class="alert alert-warning hidden">
+            Ноутбук перезагрузится через 5 секунд. 
+        </div>
+        <div id="start-btn" class="mb-5 hidden">
             <form  action="{{ url_for('lab_start', lab_id=lab.id) }}" method="post">
                 {{ form.hidden_tag() }}
                 {{ form.submit(value="Начать", class="btn btn-success btn-lg") }}
+            </form>
+            
+        </div>
+        <div id="reboot-btn" class="mb-5 hidden">
+            <form  action="{{ url_for('reboot') }}" method="post">
+                {{ form.hidden_tag() }}
+                {{ form.submit(value="Перезагрузить", class="btn btn-danger btn-lg") }}
             </form>
             
         </div>

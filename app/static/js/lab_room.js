@@ -1,8 +1,11 @@
 let loading_alert = document.getElementById('loading-alert');
 let start_alert = document.getElementById('start-alert');
+let reboot_alert = document.getElementById('reboot-alert');
 let start_btn = document.getElementById('start-btn');
+let reboot_btn = document.getElementById('reboot-btn');
 let back_btn = document.getElementById('back-btn');
 let ready_alert = document.getElementById('ready-alert');
+let reboot_eta_alert = document.getElementById('reboot-eta-alert')
 // hideElements([loading_alert, start_alert, start_btn, back_btn])
 
 socket.onmessage = function(event) {
@@ -12,19 +15,18 @@ socket.onmessage = function(event) {
         let status = jobState['status']
         if( status == 'ready'){
             hideElements([loading_alert])
-            showElements([ready_alert, back_btn]);
+            showElements([reboot_alert, reboot_btn ]);
 
         }else if(status == 'loading'){
-            hideElements([ready_alert, back_btn, start_btn])
+            hideElements([ready_alert, back_btn, start_btn, reboot_alert])
             showElements([loading_alert]);
-        
-    }else{
-        showElements([start_alert, start_btn, back_btn])
-    }
-    
-  }
-  
-};
+        }else if(status == 'reboot'){
+            hideElements([ready_alert, back_btn, start_btn, loading_alert, reboot_alert, reboot_btn]);
+            showElements([reboot_eta_alert]);
+        }else{
+            showElements([start_alert, start_btn, back_btn])
+        } 
+  }};
           
 // socket.onclose = function(event) {
 // if (event.wasClean) {

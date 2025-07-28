@@ -114,6 +114,16 @@ def lab_manual(lab_id):
     form = EmptyForm()
     return render_template("lab_manual.html", lab=lab, form=form, current_lab=current_lab)
 
+@app.route("/reboot", methods=['POST'])
+def reboot():
+    state = get_job_state()
+    
+    if state:
+        state['status'] = 'reboot'
+        set_job_state(state)
+        return redirect(url_for('lab_room', lab_id=state['lab_id']))
+    else:
+        return redirect(url_for('index'))
 
 
 @sock.route('/ws/job_state')
@@ -126,38 +136,25 @@ def job_state(ws):
     'lab_id': 123
     }
     '''
-    state = get_job_state()
-    print(state)
-    if state:
-        result_id = state['result_id']
-        
-        status = ''
-        
-        if allIsDone(result_id):
-            flush_job_state()
-            status = 'ready'
-            
-        else:
-            status = 'loading'
-        state['status'] = status
-        
-        
-    ws.send(json.dumps(state))
+    
     while True:
-        time.sleep(1)
-        # with redis_conn() as conn:
-        #     state = conn.hgetall('job_state')
-        #     print(state)
+        
+        state = get_job_state()
         if state:
-            result_id = state['result_id']
             
-            status = ''
+            status = state['status']
+            if status == 'loading':
+                result_id = state['result_id']
+                
+                status = ''
+                
+                if allIsDone(result_id):
+                    status = 'ready'
+                    state['status'] = status
+                    set_job_state(state)
+                    
             
-            if allIsDone(result_id):
-                print("READY")
-                flush_job_state()
-                status = 'ready'
-                state['status'] = status
-                ws.send(json.dumps(state))
+        ws.send(json.dumps(state))
+        time.sleep(1)
                 
             
