@@ -10,15 +10,14 @@ from test_app import MOCKED
 from uuid import uuid4
 import time
 import json
-from app.data_access import redis_conn, get_job_state, set_job_state, flush_job_state
+from app.data_access import redis_conn, get_job_state, set_job_state
 
 @app.route('/')
 @app.route('/index')
 def index():
     state = get_job_state()
         
-    # form = EmptyForm()
-    if state and state['status'] == 'loading':
+    if state:
         return redirect(url_for('lab_room', lab_id=state['lab_id']))
 
     lab_list = []
@@ -121,6 +120,7 @@ def reboot():
     if state:
         state['status'] = 'reboot'
         set_job_state(state)
+
         return redirect(url_for('lab_room', lab_id=state['lab_id']))
     else:
         return redirect(url_for('index'))
@@ -153,7 +153,6 @@ def job_state(ws):
                     state['status'] = status
                     set_job_state(state)
                     
-            
         ws.send(json.dumps(state))
         time.sleep(1)
                 

@@ -1,4 +1,4 @@
-from app.remote_control import backup, restore
+from app.remote_control import backup, restore, reboot
 import dotenv
 import os
 
@@ -44,5 +44,12 @@ def test_restore():
     assert res['backup_id'] == uid
     assert res['host'] == host
     assert res['backup_cmd'] == "rsync -aAXv --delete --exclude={'/backup/*','/dev/*','/proc/*','/sys/*','/tmp/*','/run/*','/mnt/*','/media/*','/lost+found'} /backup/123/ /"
+
+def main():
+    res = reboot('localhost')
+    print(res)
+
+if __name__ == "__main__":
+    main()
     
     

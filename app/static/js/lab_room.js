@@ -7,6 +7,8 @@ let back_btn = document.getElementById('back-btn');
 let ready_alert = document.getElementById('ready-alert');
 let reboot_eta_alert = document.getElementById('reboot-eta-alert')
 // hideElements([loading_alert, start_alert, start_btn, back_btn])
+let progress_bar = document.createElement('span');
+loading_alert.appendChild(progress_bar)
 
 socket.onmessage = function(event) {
     let jobState = JSON.parse(event.data);
@@ -20,6 +22,14 @@ socket.onmessage = function(event) {
         }else if(status == 'loading'){
             hideElements([ready_alert, back_btn, start_btn, reboot_alert])
             showElements([loading_alert]);
+            
+            
+            progress_bar.innerHTML = bars[i];
+            i++;
+            if(i >= bars.length){
+                i = 0
+            }
+                
         }else if(status == 'reboot'){
             hideElements([ready_alert, back_btn, start_btn, loading_alert, reboot_alert, reboot_btn]);
             showElements([reboot_eta_alert]);

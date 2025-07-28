@@ -3,6 +3,7 @@ from fabric import Connection, Config
 import os
 from pathlib import Path
 from sys import platform
+
 from remote_ctl_config import PKEY_PATH, SUDO_PASS, REMOTE_USER, REMOTE_PORT, BACKUP_DIR
 
 host = '192.168.1.12'
@@ -32,12 +33,12 @@ class SSHConn(Connection):
         )
 
 
-def backup(host, uid: str, comment: str, backup_dir: str = BACKUP_DIR, link_path: str = None):
+def backup(host, backup_uid: str, comment: str, backup_dir: str = BACKUP_DIR, link_path: str = None):
     """Makes backup of files in Linux-based system"""
     
     if backup_dir[-1] != '/':
         backup_dir = backup_dir + '/'
-    path = os.path.join(backup_dir, uid) + os.sep
+    path = os.path.join(backup_dir, backup_uid) + os.sep
 
     if platform == 'win32':
         path = Path(path).as_posix()
@@ -57,7 +58,7 @@ def backup(host, uid: str, comment: str, backup_dir: str = BACKUP_DIR, link_path
         #     result = conn.sudo(backup_cmd, hide=True)
         pass
     except Exception as err:
-        return {"backup_id": uid,
+        return {"backup_id": backup_uid,
             "host": host,
             "backup_cmd": backup_cmd,
             "link_path": link_path or "",
@@ -68,7 +69,7 @@ def backup(host, uid: str, comment: str, backup_dir: str = BACKUP_DIR, link_path
             "cmd_code": 1
             }
     
-    return {"backup_id": uid,
+    return {"backup_id": backup_uid,
             "host": host,
             "backup_cmd": backup_cmd,
             "link_path": link_path or "",
@@ -79,13 +80,13 @@ def backup(host, uid: str, comment: str, backup_dir: str = BACKUP_DIR, link_path
             }
 
 
-def restore(host, uid: str, backup_dir: str = BACKUP_DIR):
+def restore(host, backup_uid: str, backup_dir: str = BACKUP_DIR):
     """Restores backup of files in Linux-based system
         path - path to backup dir
     """
     if backup_dir[-1] != '/':
         backup_dir = backup_dir + '/'
-    path = os.path.join(backup_dir, uid) + os.sep
+    path = os.path.join(backup_dir, backup_uid) + os.sep
 
     if platform == 'win32':
         path = Path(path).as_posix()
@@ -102,7 +103,7 @@ def restore(host, uid: str, backup_dir: str = BACKUP_DIR):
             result = conn.sudo(backup_cmd, hide=True)
         
     except Exception as err:
-        return {"backup_id": uid,
+        return {"backup_id": backup_uid,
             "host": host,
             "restore_cmd": backup_cmd,
             "path": path,
@@ -111,7 +112,7 @@ def restore(host, uid: str, backup_dir: str = BACKUP_DIR):
             "cmd_code": 1
             }
     
-    return {"backup_id": uid,
+    return {"backup_id": backup_uid,
             "host": host,
             "backup_cmd": backup_cmd,
             "path": path,
@@ -120,14 +121,15 @@ def restore(host, uid: str, backup_dir: str = BACKUP_DIR):
             }
 
 def reboot(host):
+    cmd = f"shutdown -r now"
     try:
         with SSHConn(host=host) as conn:
-            result = conn.sudo("reboot now", hide=True)
+            result = conn.sudo(cmd, hide=True)
         
     except Exception as err:
         return {
             "host": host,
-            "cmd": "reboot now",
+            "cmd": cmd,
             "cmd_result": '',
             "cmd_error": repr(err),
             "cmd_code": 1
@@ -135,18 +137,18 @@ def reboot(host):
     
     return {
             "host": host,
-            "cmd": "reboot now",
+            "cmd": cmd,
             "cmd_result": '',
             "cmd_code": 0
             }
 
 def main():
     print(f"Connect using {PKEY_PATH}")
-    uid = str(uuid4())
-    res = restore(host, uid='5aff518f-de1b-40af-820d-18f3899df715')
+    # uid = str(uuid4())
+    # res = restore(host, uid='5aff518f-de1b-40af-820d-18f3899df715')
 
-    print(res)
-    res =reboot(host)
+    # print(res)
+    res =reboot(host='localhost')
     print(res)
 
 
