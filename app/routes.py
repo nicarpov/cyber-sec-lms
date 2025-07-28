@@ -3,7 +3,7 @@ from flask import render_template, redirect, url_for
 from app.forms import EmptyForm
 from app.models import labs, current_lab, task_id, hosts
 from app import sock
-from tasks import celery_app, add, backup, restore
+from tasks import celery_app, allIsDone, add, backup, restore
 from celery import group
 from celery.result import AsyncResult
 from test_app import MOCKED
@@ -55,6 +55,7 @@ def lab_start(lab_id):
             backup_ids = [ 2, 3, 4, 5]
             job = group([add.s(host, id) for host, id in zip(hosts, backup_ids)])
             r = job.delay()
+            r.save()
             
             with redis_conn() as conn:
                 conn.hset('job_state', mapping={
@@ -129,9 +130,10 @@ def job_state(ws):
         print(state)
         if state:
             result_id = state['result_id']
-            r = celery_app.AsyncResult(result_id)
+            
             status = ''
-            if r.ready():
+            print('BEFORE LOOP')
+            if allIsDone(result_id):
                 conn.delete('job_state')
                 status = 'ready'
                 
@@ -143,17 +145,21 @@ def job_state(ws):
     ws.send(json.dumps(state))
     while True:
         time.sleep(1)
-        if state:
-            result_id = state['result_id']
-            r = celery_app.AsyncResult(result_id)
-            status = ''
-            # print(r.state)
-            if r.ready():
-                print("READY")
-                with redis_conn() as conn:
+        with redis_conn() as conn:
+            state = conn.hgetall('job_state')
+            print(state)
+            if state:
+                result_id = state['result_id']
+                
+                status = ''
+                # print(r.state)
+                print('INSIDE LOOP')
+                if allIsDone(result_id):
+                    print("READY")
+                    
                     conn.delete('job_state')
-                status = 'ready'
-                state['status'] = status
-                ws.send(json.dumps(state))
-            
+                    status = 'ready'
+                    state['status'] = status
+                    ws.send(json.dumps(state))
+                
             
