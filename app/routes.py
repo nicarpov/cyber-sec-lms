@@ -10,13 +10,17 @@ from test_app import MOCKED
 from uuid import uuid4
 import time
 import json
-from app.data_access import redis_conn
+from app.data_access import redis_conn, get_job_state, set_job_state, flush_job_state
 
 @app.route('/')
 @app.route('/index')
 def index():
-    
+    state = get_job_state()
+        
     # form = EmptyForm()
+    if state and state['status'] == 'loading':
+        return redirect(url_for('lab_room', lab_id=state['lab_id']))
+
     lab_list = []
     for id in labs:
         lab = labs[id]
@@ -56,13 +60,12 @@ def lab_start(lab_id):
             job = group([add.s(host, id) for host, id in zip(hosts, backup_ids)])
             r = job.delay()
             r.save()
-            
-            with redis_conn() as conn:
-                conn.hset('job_state', mapping={
+            set_job_state({
                     'result_id': r.id,
                     'status': 'loading',
                     'lab_id': str(lab_id)
                 })
+            
             
         else:
             # job = group([restore.s(host, id) for host, id in zip(hosts, backup_ids)])
@@ -123,43 +126,38 @@ def job_state(ws):
     'lab_id': 123
     }
     '''
-    state = {}
-    
-    with redis_conn() as conn:
-        state = conn.hgetall('job_state')
-        print(state)
+    state = get_job_state()
+    print(state)
+    if state:
+        result_id = state['result_id']
+        
+        status = ''
+        
+        if allIsDone(result_id):
+            flush_job_state()
+            status = 'ready'
+            
+        else:
+            status = 'loading'
+        state['status'] = status
+        
+        
+    ws.send(json.dumps(state))
+    while True:
+        time.sleep(1)
+        # with redis_conn() as conn:
+        #     state = conn.hgetall('job_state')
+        #     print(state)
         if state:
             result_id = state['result_id']
             
             status = ''
-            print('BEFORE LOOP')
+            
             if allIsDone(result_id):
-                conn.delete('job_state')
+                print("READY")
+                flush_job_state()
                 status = 'ready'
-                
-            else:
-                status = 'loading'
-            state['status'] = status
-            
-            
-    ws.send(json.dumps(state))
-    while True:
-        time.sleep(1)
-        with redis_conn() as conn:
-            state = conn.hgetall('job_state')
-            print(state)
-            if state:
-                result_id = state['result_id']
-                
-                status = ''
-                # print(r.state)
-                print('INSIDE LOOP')
-                if allIsDone(result_id):
-                    print("READY")
-                    
-                    conn.delete('job_state')
-                    status = 'ready'
-                    state['status'] = status
-                    ws.send(json.dumps(state))
+                state['status'] = status
+                ws.send(json.dumps(state))
                 
             

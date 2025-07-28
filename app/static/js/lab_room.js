@@ -1,7 +1,9 @@
 let loading_alert = document.getElementById('loading-alert');
 let start_alert = document.getElementById('start-alert');
 let start_btn = document.getElementById('start-btn');
-hideElements([loading_alert, start_alert, start_btn])
+let back_btn = document.getElementById('back-btn');
+let ready_alert = document.getElementById('ready-alert');
+// hideElements([loading_alert, start_alert, start_btn, back_btn])
 
 socket.onmessage = function(event) {
     let jobState = JSON.parse(event.data);
@@ -9,19 +11,15 @@ socket.onmessage = function(event) {
     if(jobState){
         let status = jobState['status']
         if( status == 'ready'){
-        
-            loading_alert.classList.remove('alert-danger');
-            loading_alert.classList.add('alert-success')
-            loading_alert.innerHTML = `
-            Подготовка завершена!
-            `
-            showElements([loading_alert]);
+            hideElements([loading_alert])
+            showElements([ready_alert, back_btn]);
 
         }else if(status == 'loading'){
+            hideElements([ready_alert, back_btn, start_btn])
             showElements([loading_alert]);
         
     }else{
-        showElements([start_alert, start_btn])
+        showElements([start_alert, start_btn, back_btn])
     }
     
   }

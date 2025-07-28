@@ -3,7 +3,7 @@
 {% block content %}
     <div class="d-flex flex-column room mt-5">
         <div class="d-flex justify-content-between">
-            <div class="back-btn mb-5">
+            <div id="back-btn" class="mb-5 hidden">
                 <a href="{{ url_for('index') }}">
                     <button type="button" class="btn btn-primary"> << К списку работ </button>
                 </a>
@@ -18,6 +18,9 @@
         <div id="loading-alert" class="alert alert-danger hidden">
             <strong>ОСТОРОЖНО!</strong> Выполняется подготовка систем. 
             Не отключайте питание устройств. 
+        </div>
+        <div id="ready-alert" class="alert alert-success hidden">
+            <strong>ГОТОВО!</strong> Системы готовы к выполнению лабораторной работы. 
         </div>
             
 

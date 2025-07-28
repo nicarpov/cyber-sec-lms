@@ -20,8 +20,8 @@ celery_app.config_from_object(CELERY)
 @celery_app.task()
 def add(x, y):
     sum = (x + y)
-    # duration = sum
-    # time.sleep(duration)
+    duration = sum
+    time.sleep(duration)
     
     
     return sum
