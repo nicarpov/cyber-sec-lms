@@ -213,11 +213,23 @@ def host_create():
 def host_edit():
     return render_template('host_edit.html')
 
+@app.route("/host/delete/<host_id>", methods=['POST'])
+def host_delete(host_id):
+    form = EmptyForm()
+    if form.validate_on_submit():
+        host = db.session.get(Host, int(host_id))
+        if host:
+            db.session.delete(host)
+            db.session.commit()
+            flash("Данные о хосте успешно удалены: {}".format(host.ip))
+        flash("Данные хоста с id {} не обнаружены".format(host_id))
+    return redirect(url_for('admin'))
+
 @app.route("/host/control/<host_id>")
 def host_control(host_id):
-    global hosts
-    host = hosts[0]
-    return render_template('host_control.html', host=host)
+    form = EmptyForm()
+    host = db.session.get(Host, int(host_id))
+    return render_template('host_control.html', host=host, form=form)
 
 
 
