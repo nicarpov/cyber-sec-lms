@@ -44,9 +44,8 @@ def login():
 @app.route('/admin')
 def admin():
     global labs
-    global hosts
-    for host in hosts:
-        host['connected'] = True
+    hosts = db.session.scalars(sa.select(Host).order_by(Host.name)).all()
+    
     lab_list = []
     for id in labs:
         lab = labs[id]
