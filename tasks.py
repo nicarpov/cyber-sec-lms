@@ -3,7 +3,7 @@ from celery import Celery, group
 import time
 from celery.result import AsyncResult, GroupResult
 from celeryconfig import CELERY
-from remote_control import reboot, SSHConn
+from remote_control import reboot, isAvailable, search_hosts
 from remote_ctl_config import RemoteCtlConf
 # PKEY_PATH, SUDO_PASS, REMOTE_USER, REMOTE_PORT, BACKUP_DIR
 
@@ -48,6 +48,15 @@ def restore(host: str, backup_id: str):
             "host": host,
             }
 
+@celery_app.task
+def task_isOnline(host):
+    return isAvailable(host)
+
+@celery_app.task
+def task_search_hosts(nmap_target):
+    res = search_hosts(nmap_target=nmap_target)
+    return res
+
 def allIsDone(groupResId):
     try:
         groupRes = GroupResult.restore(groupResId, app=celery_app)
@@ -63,8 +72,8 @@ def allIsDone(groupResId):
 if __name__ == "__main__":
     # g = group([task_reboot.s('localhost') for i in range(4)])
     # r = g.delay()
-    r = task_reboot.apply_async(args=['192.168.1.12'])
-    # print(r.get())
+    r = task_search_hosts.apply_async(args=['192.168.0.0/24'])
+    print(r.get())
 
 
 

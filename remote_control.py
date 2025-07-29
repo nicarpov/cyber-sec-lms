@@ -1,5 +1,5 @@
 from uuid import uuid4
-from fabric import Connection, Config
+from fabric import Connection, Config, SerialGroup
 import os
 from pathlib import Path
 from sys import platform
@@ -32,6 +32,7 @@ class SSHConn(Connection):
                         "key_filename": conf.PKEY_PATH
                         }
         )
+
 
 
 def backup(host, backup_uid: str, comment: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, link_path: str = None):
@@ -121,6 +122,28 @@ def restore(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR):
             "cmd_code": result.exited
             }
 
+def isAvailable(host):
+    isOnline = False
+    errMsg = ''
+    try:
+        with SSHConn(host=host) as conn:
+            res = conn.open()
+            isOnline = True
+        
+    except Exception as err:
+        errMsg = str(err)
+    if isOnline:
+
+        return {
+                "isOnline" : "yes"
+                }
+    else:
+        return {
+                "isOnline" : "no",
+                "err": errMsg
+                }
+    
+
 def reboot(host):
     cmd = f"shutdown -r"
     try:
@@ -145,13 +168,23 @@ def reboot(host):
             "cmd_code": 0
             }
 
+def search_hosts(nmap_target):
+    host_list = []
+    with SSHConn(host='localhost') as conn:
+        res = conn.sudo('nmap -sn {} -oG -'.format(nmap_target), hide=True, timeout=30)
+        lines = res.stdout.split('\n')
+        host_lines = list(filter(lambda l: l.startswith('Host:'), lines))
+        host_list = [line.split()[1] for line in host_lines]
+    return host_list
+        
+
 def main():
     print(f"Connect using {RemoteCtlConf.PKEY_PATH}")
     # uid = str(uuid4())
     # res = restore(host, uid='5aff518f-de1b-40af-820d-18f3899df715')
 
     # print(res)
-    res =reboot(host='localhost')
+    res = search_hosts('192.168.0.0/24')
     print(res)
 
 
