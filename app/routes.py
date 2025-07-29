@@ -126,8 +126,18 @@ def lab_edit(lab_id):
 
 @app.route('/lab/delete/<lab_id>', methods=['POST'])
 def lab_delete(lab_id):
-    global labs
-    lab = labs[lab_id]
+    form = EmptyForm()
+    if form.validate_on_submit():
+        
+        lab = db.session.get(Lab, int(lab_id))
+        if lab:
+            db.session.delete(lab)
+            db.session.commit()
+            flash("Лабораторная работа удалена: {}".format(lab.name))
+            return redirect(url_for('admin'))
+        else:
+            flash("Данных о работе не обнаружено. ID работы: ".format(lab_id))
+            return redirect(url_for('lab_control'))
     return redirect(url_for('admin'))
 
 @app.route('/lab/backup/<lab_id>', methods=['POST'])
@@ -245,12 +255,6 @@ def host_control(host_id):
     host = db.session.get(Host, int(host_id))
     return render_template('host_control.html', host=host, form=form)
 
-
-
-# @app.route('/lab_manual/<lab_id>')
-# def lab_manual(lab_id):
-
-#     return render_template('lab_manual.html', manual_link=link)
 
 
 
