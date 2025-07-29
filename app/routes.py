@@ -1,7 +1,9 @@
 from app import app
 from flask import render_template, redirect, url_for
 from app.forms import EmptyForm
-from app.models import labs, current_lab, task_id, hosts
+from app.models import labs, current_lab, task_id, hosts, Host, Lab, Backup
+import sqlalchemy as sa
+from app import db
 from app import sock
 from tasks import celery_app, allIsDone, add, backup, restore, task_reboot
 from celery import group
@@ -11,8 +13,9 @@ from uuid import uuid4
 import time
 import json
 from data_access import redis_conn, get_job_state, set_job_state
-from datetime import datetime, timedelta
 
+
+# MAIN ROUTES
 @app.route('/')
 @app.route('/index')
 def index():
@@ -51,6 +54,52 @@ def admin():
         lab_list.append(lab)
     return render_template('admin.html', labs=lab_list, hosts=hosts)
 
+@sock.route('/ws/job_state')
+def job_state(ws):
+    '''
+    redis key - "job_state"
+    state = {
+    'result_id' : uuid,
+    'status': loading|ready,
+    'lab_id': 123
+    }
+    '''
+    
+    while True:
+        
+        state = get_job_state()
+        if state:
+            
+            status = state['status']
+            if status == 'loading':
+                result_id = state['result_id']
+                
+                status = ''
+                
+                if allIsDone(result_id):
+                    status = 'ready'
+                    state['status'] = status
+                    set_job_state(state)
+                    
+        ws.send(json.dumps(state))
+        time.sleep(1)
+
+@app.route("/reboot", methods=['POST'])
+def reboot():
+    state = get_job_state()
+    
+    form = EmptyForm()
+    if form.validate_on_submit():
+        if state:
+            state['status'] = 'reboot'
+            set_job_state(state)
+            
+            task_reboot.apply_async(args=['127.0.0.1'], countdown=5)
+            return redirect(url_for('lab_room', lab_id=state['lab_id']))
+        else:
+            return redirect(url_for('index'))
+
+# LAB ROUTES
 @app.route('/lab/create', methods=['GET', 'POST'])
 def lab_create():
     return render_template('lab_create.html')
@@ -67,20 +116,6 @@ def lab_edit(lab_id):
     global labs
     lab = labs[lab_id]
     return render_template('lab_edit.html', lab=lab)
-
-@app.route("/host/create", methods=['GET', 'POST'])
-def host_create():
-    return render_template('host_create.html')
-
-@app.route("/host/edit", methods=['GET', 'POST'])
-def host_edit():
-    return render_template('host_edit.html')
-
-@app.route("/host/control/<host_id>")
-def host_control(host_id):
-    global hosts
-    host = hosts[0]
-    return render_template('host_control.html', host=host)
 
 @app.route('/lab/backup/<lab_id>', methods=['POST'])
 def lab_backup(lab_id):
@@ -141,11 +176,6 @@ def lab_finish(lab_id):
             current_lab = {}
             return redirect(url_for('lab_room', lab_id=lab_id))
 
-# @app.route('/lab_manual/<lab_id>')
-# def lab_manual(lab_id):
-
-#     return render_template('lab_manual.html', manual_link=link)
-
 @app.route("/lab/room/<lab_id>")
 def lab_room(lab_id):
     # lab['id'] = lab_id
@@ -166,50 +196,33 @@ def lab_manual(lab_id):
     form = EmptyForm()
     return render_template("lab_manual.html", lab=lab, form=form, current_lab=current_lab)
 
-@app.route("/reboot", methods=['POST'])
-def reboot():
-    state = get_job_state()
-    
-    form = EmptyForm()
-    if form.validate_on_submit():
-        if state:
-            state['status'] = 'reboot'
-            set_job_state(state)
-            
-            task_reboot.apply_async(args=['127.0.0.1'], countdown=5)
-            return redirect(url_for('lab_room', lab_id=state['lab_id']))
-        else:
-            return redirect(url_for('index'))
+# HOST ROUTES
+@app.route("/host/create", methods=['GET', 'POST'])
+def host_create():
+    return render_template('host_create.html')
+
+@app.route("/host/edit", methods=['GET', 'POST'])
+def host_edit():
+    return render_template('host_edit.html')
+
+@app.route("/host/control/<host_id>")
+def host_control(host_id):
+    global hosts
+    host = hosts[0]
+    return render_template('host_control.html', host=host)
 
 
-@sock.route('/ws/job_state')
-def job_state(ws):
-    '''
-    redis key - "job_state"
-    state = {
-    'result_id' : uuid,
-    'status': loading|ready,
-    'lab_id': 123
-    }
-    '''
-    
-    while True:
-        
-        state = get_job_state()
-        if state:
-            
-            status = state['status']
-            if status == 'loading':
-                result_id = state['result_id']
-                
-                status = ''
-                
-                if allIsDone(result_id):
-                    status = 'ready'
-                    state['status'] = status
-                    set_job_state(state)
-                    
-        ws.send(json.dumps(state))
-        time.sleep(1)
+
+# @app.route('/lab_manual/<lab_id>')
+# def lab_manual(lab_id):
+
+#     return render_template('lab_manual.html', manual_link=link)
+
+
+
+
+
+
+
                 
             
