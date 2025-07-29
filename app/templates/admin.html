@@ -13,11 +13,17 @@
             
         </div>
     </div>
-    <ul class="nav flex-column align-content-start">
+    <ul class="list-group align-content-start">
+            {% if labs %}
+                {% for lab in labs %}
+                    {% include '_lab_entry.html'   %}
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">Пока нет ни одной лабораторной работы.
+                    Нажмите <strong>"Создать"</strong>.
+                </p>
+            {% endif %}
             
-            {% for lab in labs %}
-                {% include '_lab_entry.html'   %}
-            {% endfor %}
         </ul>
     <div class="header-hosts d-flex justify-content-start mt-4">
         <div class="name h4 p-1 me-4">Хосты</div>
@@ -30,11 +36,17 @@
             
         </div>
     </div>
-    <ul class="nav flex-column align-content-start" style="width: 100%">
+    <ul class="list-group flex-column align-content-start" style="width: 100%">
+        {% if hosts %}
+            {% for host in hosts %}
+                {% include '_host_entry.html'   %}
+            {% endfor %}
+        {% else %}
+            <p class="text-muted">Не зарегистрирован ни один хост.
+                Нажмите <strong>"Добавить"</strong>.
+            </p>
+        {% endif %}
         
-        {% for host in hosts %}
-            {% include '_host_entry.html'   %}
-        {% endfor %}
     </ul>
 
 

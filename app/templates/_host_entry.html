@@ -1,8 +1,9 @@
-<li class="nav-item ">
-    <a href="{{ url_for('host_control', host_id=host.id) }}" class="nav-link text-decoration-none">
-        <button type="button" class="btn btn-outline-dark" >
+<li class="list-group-item ">
+    
+        
+        <a href="{{ url_for('host_control', host_id=host.id) }}" class="text-decoration-none">
             <div class="d-flex">
-                <span class="badge bg-danger p-0 me-4" style="height:min-content"> <p class="h4 m-0">{{ host.name}}</p> </span> 
+                <span class="badge bg-danger p-0 me-4" style="height:min-content"> <p class="h4 m-0">{{ host.name}}</p> </span>
                 <p class="text-muted me-2">ip: </p> 
                 <p class="h5 me-2">{{host.ip}}</p>
                 {% if host.connected %}
@@ -11,6 +12,9 @@
                     <span class="badge rounded-pill text-secondary" style="height:min-content">offline</span>
                 {% endif %}
             </div>
-        </button>
-    </a>
+            
+        </a>
+        
+    </div>
+    
 </li>

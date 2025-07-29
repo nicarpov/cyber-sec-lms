@@ -21,10 +21,21 @@
         
         <div class="d-flex">
             <div class="d-flex flex-column">
-                <div class="host-info-label">
-                    <div class="h3">Данные хоста</div>
+                <div class="host-info-label d-flex">
+                    <div class="h3 d-flex me-3">Данные хоста</div>
+                    <div class="host-action d-flex">
+                        <!-- EDIT -->
+                        <a href="{{ url_for('host_edit', host_id=host.id)}}">
+                            <button type="button" class="btn btn-sm btn-primary me-2">Изменить</button>
+                        </a>
+                        <!-- DELETE -->
+                        <form action="{{ url_for('host_delete', host_id=host.id)}}" method="post" >
+                            {{form.hidden_tag()}}
+                            {{form.submit(value="Удалить", class="btn btn-sm btn-danger")}}
+                        </form>
+                    </div>  
                 </div>
-                <div class="host-info d-flex mb-5">
+                <div class="host-info d-flex mb-5 shadow-sm p-2">
                     <div class="name me-5">
                         <div class="p text-muted">Имя хоста: </div>
                         <div class="h4 text-black">
@@ -52,18 +63,8 @@
                 </div>
             </div>
             <div class="d-flex flex-column ms-4">
-                <div class="host-action-label h3">Действия</div>
-                <div class="host-action d-flex">
-                    <!-- EDIT -->
-                    <a href="{{ url_for('host_edit', host_id=host.id)}}">
-                        <button type="button" class="btn btn-primary">Изменить данные хоста</button>
-                    </a>
-                    <!-- DELETE -->
-                    <form action="{{ url_for('host_delete', host_id=host.id)}}" method="post" >
-                        {{form.hidden_tag()}}
-                        {{form.submit(value="Удалить данные о хосте", class="btn btn-danger")}}
-                    </form>
-                </div>  
+                
+                
             </div>
         </div>
         <div class="d-flex">

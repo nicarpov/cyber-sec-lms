@@ -222,7 +222,8 @@ def host_delete(host_id):
             db.session.delete(host)
             db.session.commit()
             flash("Данные о хосте успешно удалены: {}".format(host.ip))
-        flash("Данные хоста с id {} не обнаружены".format(host_id))
+        else:
+            flash("Данные хоста с id {} не обнаружены".format(host_id))
     return redirect(url_for('admin'))
 
 @app.route("/host/control/<host_id>")
