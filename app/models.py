@@ -14,7 +14,7 @@ class Host(db.Model):
     
 class Lab(db.Model):
     id: so.Mapped[int] = so.MappedColumn(primary_key=True)
-    name: so.Mapped[str] = so.MappedColumn(sa.String(32), unique=True)
+    name: so.Mapped[str] = so.MappedColumn(sa.String(256), unique=True)
     
 
     def __repr__(self):

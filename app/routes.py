@@ -1,6 +1,6 @@
 from app import app
 from flask import render_template, redirect, url_for, flash
-from app.forms import EmptyForm, HostCreate
+from app.forms import EmptyForm, HostCreate, LabCreate
 from app.models import labs, current_lab, task_id, hosts, Host, Lab, Backup
 import sqlalchemy as sa
 from app import db
@@ -43,15 +43,11 @@ def login():
     
 @app.route('/admin')
 def admin():
-    global labs
+    labs = db.session.scalars(sa.select(Lab).order_by(Lab.name)).all()
     hosts = db.session.scalars(sa.select(Host).order_by(Host.name)).all()
     
-    lab_list = []
-    for id in labs:
-        lab = labs[id]
-        lab['id'] = id
-        lab_list.append(lab)
-    return render_template('admin.html', labs=lab_list, hosts=hosts)
+    
+    return render_template('admin.html', labs=labs, hosts=hosts)
 
 @sock.route('/ws/job_state')
 def job_state(ws):
@@ -101,21 +97,38 @@ def reboot():
 # LAB ROUTES
 @app.route('/lab/create', methods=['GET', 'POST'])
 def lab_create():
-    return render_template('lab_create.html')
+    form = LabCreate()
+    if form.validate_on_submit():
+        lab = Lab(name=form.name.data)
+        db.session.add(lab)
+        db.session.commit()
+        flash('Лабораторная работа успешно создана: {}'.format(lab.name))
+        return redirect(url_for('admin'))
+    return render_template('lab_create.html', form=form)
 
 @app.route('/lab/control/<lab_id>')
 def lab_control(lab_id):
-    global labs
-    lab = labs[lab_id]
-    lab['id'] = lab_id
-    return render_template('lab_control.html', lab=lab)
+    lab = db.session.get(Lab, int(lab_id))
+    form = EmptyForm()
+    return render_template('lab_control.html', lab=lab, form=form)
 
 @app.route('/lab/edit/<lab_id>', methods=['GET', 'POST'])
 def lab_edit(lab_id):
+    lab =  db.session.get(Lab, int(lab_id))
+    form = LabCreate()
+    if form.validate_on_submit():
+        lab.name = form.name.data
+        db.session.commit()
+        flash("Изменения успешно сохранены")
+        return redirect(url_for('lab_control', lab_id=lab_id))
+    form.name.data = lab.name
+    return render_template('lab_edit.html', lab=lab, form=form)
+
+@app.route('/lab/delete/<lab_id>', methods=['POST'])
+def lab_delete(lab_id):
     global labs
     lab = labs[lab_id]
-    return render_template('lab_edit.html', lab=lab)
-
+    return redirect(url_for('admin'))
 
 @app.route('/lab/backup/<lab_id>', methods=['POST'])
 def lab_backup(lab_id):

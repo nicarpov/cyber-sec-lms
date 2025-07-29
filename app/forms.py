@@ -27,3 +27,13 @@ class HostCreate(FlaskForm):
         result = db.session.scalar(query)
         if result is not None:
             raise ValidationError('Адрес уже зарегистрирован')
+        
+class LabCreate(FlaskForm):
+    name = StringField('Название лабораторной работы', validators=[DataRequired()])
+    submit = SubmitField('Зарегистрировать хост')
+
+    def validate_name(self, name):
+        query = sa.select(Lab).where(Lab.name == name.data)
+        result = db.session.scalar(query)
+        if result is not None:
+            raise ValidationError('Имя уже зарегистрировано')
