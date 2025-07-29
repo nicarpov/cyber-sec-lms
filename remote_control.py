@@ -4,9 +4,9 @@ import os
 from pathlib import Path
 from sys import platform
 
-from remote_ctl_config import PKEY_PATH, SUDO_PASS, REMOTE_USER, REMOTE_PORT, BACKUP_DIR
+from remote_ctl_config import RemoteCtlConf
 
-host = '192.168.1.12'
+# host = '192.168.1.12'
 # host_remote = '89.109.5.245'
 
 
@@ -17,23 +17,24 @@ class SSHConn(Connection):
     REMOTE_USER, REMOTE_PORT, PKEY_PATH and SUDO_PASS config parameters
     """
 
-    def __init__(self, host):
+    def __init__(self, host, conf=RemoteCtlConf):
         super().__init__(
             host, 
-            user=REMOTE_USER, 
-            port=REMOTE_PORT, 
+            user=conf.REMOTE_USER, 
+            port=conf.REMOTE_PORT, 
             config=Config(
                 overrides={
-                    'sudo': {'password': SUDO_PASS}
+                    'sudo': {'password': conf.SUDO_PASS,
+                            }
                     }
                 ), 
             connect_kwargs={
-                        "key_filename": PKEY_PATH
+                        "key_filename": conf.PKEY_PATH
                         }
         )
 
 
-def backup(host, backup_uid: str, comment: str, backup_dir: str = BACKUP_DIR, link_path: str = None):
+def backup(host, backup_uid: str, comment: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, link_path: str = None):
     """Makes backup of files in Linux-based system"""
     
     if backup_dir[-1] != '/':
@@ -80,7 +81,7 @@ def backup(host, backup_uid: str, comment: str, backup_dir: str = BACKUP_DIR, li
             }
 
 
-def restore(host, backup_uid: str, backup_dir: str = BACKUP_DIR):
+def restore(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR):
     """Restores backup of files in Linux-based system
         path - path to backup dir
     """
@@ -121,10 +122,12 @@ def restore(host, backup_uid: str, backup_dir: str = BACKUP_DIR):
             }
 
 def reboot(host):
-    cmd = f"shutdown -r now"
+    cmd = f"shutdown -r"
     try:
         with SSHConn(host=host) as conn:
+            # print('SSHConn', conn.config.sudo)
             result = conn.sudo(cmd, hide=True)
+            # print('reboot res:', result)
         
     except Exception as err:
         return {
@@ -143,13 +146,14 @@ def reboot(host):
             }
 
 def main():
-    print(f"Connect using {PKEY_PATH}")
+    print(f"Connect using {RemoteCtlConf.PKEY_PATH}")
     # uid = str(uuid4())
     # res = restore(host, uid='5aff518f-de1b-40af-820d-18f3899df715')
 
     # print(res)
     res =reboot(host='localhost')
     print(res)
+
 
 
 if __name__ == "__main__":

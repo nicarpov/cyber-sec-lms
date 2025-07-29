@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <form action="{{ url_for('login')}}" method="post">
+        form.hidden_tag()
+        <div class="mb-3 mt-3">
+            <label for="login" class="form-label">Логин:</label>
+            <input type="email" class="form-control" id="login" placeholder="Введите логин" name="login">
+        </div>
+        <div class="mb-3">
+            <label for="pwd" class="form-label">Password:</label>
+            <input type="password" class="form-control" id="pwd" placeholder="Enter password" name="pswd">
+        </div>
+        <div class="form-check mb-3">
+            <label class="form-check-label">
+            <input class="form-check-input" type="checkbox" name="remember"> Remember me
+            </label>
+        </div>
+        <button type="submit" class="btn btn-primary">Войти</button>
+    </form>
+{% endblock %}

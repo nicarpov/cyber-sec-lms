@@ -1,10 +1,11 @@
 from celery import Celery, group
+
 import time
 from celery.result import AsyncResult, GroupResult
 from celeryconfig import CELERY
-
-
-
+from remote_control import reboot, SSHConn
+from remote_ctl_config import RemoteCtlConf
+# PKEY_PATH, SUDO_PASS, REMOTE_USER, REMOTE_PORT, BACKUP_DIR
 
 
 celery_app = Celery('tasks', 
@@ -26,6 +27,10 @@ def add(x, y):
     
     return sum
 
+@celery_app.task()
+def task_reboot(host):
+    r = reboot(host)
+    return r
 
 @celery_app.task
 def backup(host: str, comment: str, path: str, link: str = None):
@@ -56,19 +61,11 @@ def allIsDone(groupResId):
     
 
 if __name__ == "__main__":
-    # hosts = [1, 2, 3, 4]
-    # backup_ids = [ 2, 3, 4, 5]
-    # job = group([add.s(host, id) for host, id in zip(hosts, backup_ids)])
-    # r = job.delay()
-    # print(r.id)
-    # r.save()
-    # restored = GroupResult.restore(r.id)
-    
-    # print('res type:', type(res.results))
-    id = "75dac67a-49b5-4b67-95c2-41b196fe6704"
-    while not allIsDone(groupResId=id):
-        time.sleep(1)
-        continue
-    print(id, 'Is Done')
+    # g = group([task_reboot.s('localhost') for i in range(4)])
+    # r = g.delay()
+    r = task_reboot.apply_async(args=['192.168.1.12'])
+    # print(r.get())
+
+
 
 

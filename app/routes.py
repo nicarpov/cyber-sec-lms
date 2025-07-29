@@ -3,14 +3,15 @@ from flask import render_template, redirect, url_for
 from app.forms import EmptyForm
 from app.models import labs, current_lab, task_id, hosts
 from app import sock
-from tasks import celery_app, allIsDone, add, backup, restore
+from tasks import celery_app, allIsDone, add, backup, restore, task_reboot
 from celery import group
 from celery.result import AsyncResult
 from test_app import MOCKED
 from uuid import uuid4
 import time
 import json
-from app.data_access import redis_conn, get_job_state, set_job_state
+from data_access import redis_conn, get_job_state, set_job_state
+from datetime import datetime, timedelta
 
 @app.route('/')
 @app.route('/index')
@@ -27,7 +28,16 @@ def index():
         lab_list.append(lab)
     return render_template('index.html', labs=lab_list)
 
-
+@app.route('/login')
+def login():
+    form = EmptyForm()
+    if form.validate_on_submit():
+        # login code
+        user_id = 1
+        return redirect(url_for('user', user_id=user_id))
+    
+    return render_template('login.html', form=form)
+    
 
 @app.route('/lab/backup/<lab_id>', methods=['POST'])
 def lab_backup(lab_id):
@@ -117,13 +127,16 @@ def lab_manual(lab_id):
 def reboot():
     state = get_job_state()
     
-    if state:
-        state['status'] = 'reboot'
-        set_job_state(state)
-
-        return redirect(url_for('lab_room', lab_id=state['lab_id']))
-    else:
-        return redirect(url_for('index'))
+    form = EmptyForm()
+    if form.validate_on_submit():
+        if state:
+            state['status'] = 'reboot'
+            set_job_state(state)
+            
+            task_reboot.apply_async(args=['127.0.0.1'], countdown=5)
+            return redirect(url_for('lab_room', lab_id=state['lab_id']))
+        else:
+            return redirect(url_for('index'))
 
 
 @sock.route('/ws/job_state')
