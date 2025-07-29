@@ -16,14 +16,14 @@ class HostCreate(FlaskForm):
 
     submit = SubmitField('Зарегистрировать хост')
 
-    def validate_name(self):
-        query = sa.select(Host).where(Host.name == self.name)
-        result = db.session.scalars(query).all()
+    def validate_name(self, name):
+        query = sa.select(Host).where(Host.name == name.data)
+        result = db.session.scalar(query)
         if result is not None:
             raise ValidationError('Имя уже зарегистрировано')
         
-    def validate_ip(self):
-        query = sa.select(Host).where(Host.ip == self.ip)
-        result = db.session.scalars(query).all()
+    def validate_ip(self, ip):
+        query = sa.select(Host).where(Host.ip == ip.data)
+        result = db.session.scalar(query)
         if result is not None:
             raise ValidationError('Адрес уже зарегистрирован')

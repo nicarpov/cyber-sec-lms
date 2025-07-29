@@ -15,7 +15,7 @@ class Host(db.Model):
 class Lab(db.Model):
     id: so.Mapped[int] = so.MappedColumn(primary_key=True)
     name: so.Mapped[str] = so.MappedColumn(sa.String(32), unique=True)
-    backups: so.WriteOnlyMapped['Backup'] = so.relationship(back_populates='labs')
+    
 
     def __repr__(self):
         return f"<Lab {self.name}>"
@@ -26,8 +26,9 @@ class Backup(db.Model):
     comment: so.Mapped[str] = so.MappedColumn(sa.String(256), unique=True)
     host_id: so.Mapped[int] = so.MappedColumn(sa.ForeignKey(Host.id))
     dir: so.Mapped[str] = so.MappedColumn(sa.String(256), nullable=True)
+    # host: so.WriteOnlyMapped['Host'] = so.relationship(back_populates='backups')
     lab_id: so.Mapped[int] = so.MappedColumn(sa.ForeignKey(Lab.id))
-    lab: so.WriteOnlyMapped['Lab'] = so.relationship(back_populates='backups')
+    # lab: so.WriteOnlyMapped['Lab'] = so.relationship(back_populates='backups')
 
     def __repr__(self):
         return f"<Backup {self.uuid}>"

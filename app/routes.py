@@ -1,6 +1,6 @@
 from app import app
-from flask import render_template, redirect, url_for
-from app.forms import EmptyForm
+from flask import render_template, redirect, url_for, flash
+from app.forms import EmptyForm, HostCreate
 from app.models import labs, current_lab, task_id, hosts, Host, Lab, Backup
 import sqlalchemy as sa
 from app import db
@@ -117,6 +117,7 @@ def lab_edit(lab_id):
     lab = labs[lab_id]
     return render_template('lab_edit.html', lab=lab)
 
+
 @app.route('/lab/backup/<lab_id>', methods=['POST'])
 def lab_backup(lab_id):
     # lab['id'] = lab_id
@@ -199,7 +200,15 @@ def lab_manual(lab_id):
 # HOST ROUTES
 @app.route("/host/create", methods=['GET', 'POST'])
 def host_create():
-    return render_template('host_create.html')
+    form = HostCreate()
+    if form.validate_on_submit():
+        host = Host(name=form.name.data, ip=form.ip.data)
+        db.session.add(host)
+        db.session.commit()
+        flash("Успешно зарегистрирован хост: {} IP: {}".format(host.name, host.ip))
+        return redirect(url_for('admin'))
+    
+    return render_template('host_create.html', form=form)
 
 @app.route("/host/edit", methods=['GET', 'POST'])
 def host_edit():

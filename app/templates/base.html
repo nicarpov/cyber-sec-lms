@@ -14,7 +14,16 @@
 </head>
 <body>
     <div id="container" class="container justify-content-center">
-  
+        {% with messages = get_flashed_messages()  %}
+            {% if messages %}
+            
+                {% for message in messages %}
+                    {% include '_flash.html'   %}
+                {% endfor %}
+            
+                
+            {% endif %}
+        {% endwith %}
           
         {% block content %}
             
