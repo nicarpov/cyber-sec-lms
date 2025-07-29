@@ -38,6 +38,49 @@ def login():
     
     return render_template('login.html', form=form)
     
+@app.route('/admin')
+def admin():
+    global labs
+    global hosts
+    for host in hosts:
+        host['connected'] = True
+    lab_list = []
+    for id in labs:
+        lab = labs[id]
+        lab['id'] = id
+        lab_list.append(lab)
+    return render_template('admin.html', labs=lab_list, hosts=hosts)
+
+@app.route('/lab/create', methods=['GET', 'POST'])
+def lab_create():
+    return render_template('lab_create.html')
+
+@app.route('/lab/control/<lab_id>')
+def lab_control(lab_id):
+    global labs
+    lab = labs[lab_id]
+    lab['id'] = lab_id
+    return render_template('lab_control.html', lab=lab)
+
+@app.route('/lab/edit/<lab_id>', methods=['GET', 'POST'])
+def lab_edit(lab_id):
+    global labs
+    lab = labs[lab_id]
+    return render_template('lab_edit.html', lab=lab)
+
+@app.route("/host/create", methods=['GET', 'POST'])
+def host_create():
+    return render_template('host_create.html')
+
+@app.route("/host/edit", methods=['GET', 'POST'])
+def host_edit():
+    return render_template('host_edit.html')
+
+@app.route("/host/control/<host_id>")
+def host_control(host_id):
+    global hosts
+    host = hosts[0]
+    return render_template('host_control.html', host=host)
 
 @app.route('/lab/backup/<lab_id>', methods=['POST'])
 def lab_backup(lab_id):

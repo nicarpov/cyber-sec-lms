@@ -197,3 +197,4 @@ cython_debug/
 .python-version
 test.py
 app/static/manuals/*
+*.db

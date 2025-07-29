@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="d-flex flex-column room mt-5">
+        <div class="d-flex justify-content-between">
+            <div id="back-btn" class="mb-5">
+                <a href="{{ url_for('admin') }}">
+                    <button type="button" class="btn btn-primary"> << Назад </button>
+                </a>
+            </div>
+            <div class="header">
+                <p class="text-secondary h5">Регистрация хоста</p>
+                
+            </div>
+            
+        </div>
+{% endblock %}
