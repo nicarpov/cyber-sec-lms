@@ -9,7 +9,7 @@
                 </a>
             </div>
             <div class="header">
-                <p class="text-secondary h5"> Панель управления лабораторной работы</p>
+                <p class="text-secondary h5">Профиль лабораторной работы</p>
                 <div class="d-flex">
                     <div class="lab-name h3">
                     {{ lab.name }}
@@ -52,7 +52,7 @@
             <div class="d-flex flex-column ms-4">
                 <div class="h3 d-flex me-3">Действия</div>
                 <div class="lab-info d-flex mb-5 shadow-sm p-2">
-                    <form action="{{ url_for('lab_backup', lab_id=lab.id)}}" method="post" >
+                    <form action="{{ url_for('save_create', lab_id=lab.id)}}" method="post" >
                             {{form.hidden_tag()}}
                             {{form.submit(value="Сохранить состояния устройств", class="btn btn-sm btn-outline-success")}}
                     </form>
@@ -63,10 +63,16 @@
         <div class="d-flex">
             <div class="d-flex flex-column">
                 <div class="backups-info-label d-flex">
-                    <div class="h3">Информация о бекапах</div>
-
+                    <div class="h3">Точки сохранения</div>
+                    
                 </div>
-                
+                {% if saves %}
+                    <ul class="list-group  align-content-start" style="width: 100%">
+                    {% for save in saves %}
+                        {% include '_save_entry.html' %}
+                    {% endfor %}
+                    </ul>
+                {% endif %}
             </div>
         </div>
 {% endblock %}

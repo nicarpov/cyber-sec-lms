@@ -1,18 +1,19 @@
+import os
 from app import app
 from flask import render_template, redirect, url_for, flash, request
 from app.forms import EmptyForm, HostCreate, LabCreate
-from app.models import labs, current_lab, task_id, hosts, Host, Lab, Backup
+from app.models import labs, current_lab, task_id, hosts, Host, Lab, Backup, Save
 import sqlalchemy as sa
 from app import db
 from app import sock
-from tasks import celery_app, allIsDone, add, backup, restore, task_reboot, task_search_hosts
+from tasks import celery_app, allIsDone, add, task_backup, task_restore, task_reboot, task_search_hosts
 from celery import group
 from celery.result import AsyncResult
 from test_app import MOCKED
 from uuid import uuid4
 import time
 import json
-from data_access import get_job_state, set_job_state, \
+from data_access import get_job_state, set_job_state, flush_job_state, \
 get_hosts_state, set_hosts_state, flush_hosts_state, \
 get_unreg_hosts, set_unreg_hosts
 from remote_ctl_config import RemoteCtlConf as rconf
@@ -57,7 +58,10 @@ def admin():
         reg_host = db.session.scalar(sa.select(Host).where(Host.ip == host))
         if not reg_host:
             unreg_hosts.append(host)
-            
+    
+    state = get_job_state()
+    if state and state['status'] == 'ready':
+        flush_job_state()
     return render_template('admin.html', labs=labs, hosts=hosts, unreg_hosts=unreg_hosts)
 
 @sock.route('/ws/job_state')
@@ -86,6 +90,7 @@ def job_state(ws):
                     status = 'ready'
                     state['status'] = status
                     set_job_state(state)
+                    
                     
         ws.send(json.dumps(state))
         time.sleep(1)
@@ -167,7 +172,12 @@ def lab_create():
 def lab_control(lab_id):
     lab = db.session.get(Lab, int(lab_id))
     form = EmptyForm()
-    return render_template('lab_control.html', lab=lab, form=form)
+    saves = db.session.scalars(sa.select(Save)
+                               .where(Save.lab_id == int(lab_id))).all()
+    state = get_job_state()
+    if state and state['status'] == 'ready':
+        flush_job_state()
+    return render_template('lab_control.html', lab=lab, form=form, saves=saves)
 
 @app.route('/lab/edit/<lab_id>', methods=['GET', 'POST'])
 def lab_edit(lab_id):
@@ -197,21 +207,7 @@ def lab_delete(lab_id):
             return redirect(url_for('lab_control'))
     return redirect(url_for('admin'))
 
-@app.route('/lab/backup/<lab_id>', methods=['POST'])
-def lab_backup(lab_id):
-    # lab['id'] = lab_id
-    form = EmptyForm()
-    
-    if form.validate_on_submit:
-        comment = "TEST"
-        if MOCKED:
-            r_id = str(uuid4())
-            task_id.append(r_id)
-        else:
-            job = group(backup.s(host, comment) for host in hosts)
-            r = job.delay()
-            task_id.append(r.id)
-        return redirect(url_for('lab_room', lab_id=lab_id))
+
 
 
 @app.route('/lab/start/<lab_id>', methods=['POST'])
@@ -317,7 +313,97 @@ def host_control(host_id):
     host = db.session.get(Host, int(host_id))
     return render_template('host_control.html', host=host, form=form)
 
+# SAVES ROUTES
+@app.route('/save/create/<lab_id>', methods=['POST'])
+def save_create(lab_id):
+    
+    form = EmptyForm()
+    
+    if form.validate_on_submit:
+        hosts = db.session.scalars(sa.select(Host)).all()
+        if hosts:
+            lab = db.session.get(Lab, int(lab_id))
+            save = Save(lab=lab, comment=lab.name, uid=str(uuid4()))
+            save.validate_default()
+            backups = []
+            task_list = []
+            for host in hosts:
+                backup_uuid = str(uuid4())
+                print("Host ",host.ip, "buid ", backup_uuid)
+                backup = Backup(save=save, host=host, comment=lab.name, uid=backup_uuid, dir=rconf.BACKUP_DIR)
+                backups.append(backup)
+                task_list.append(task_backup.s(host.ip, backup.uid))
+            task_group = group(task_list)
+            r = task_group.delay()
+            r.save()
+            set_job_state({
+                    'job_type': 'save',
+                    'result_id': r.id,
+                    'status': 'loading',
+                    'lab_id': str(lab_id)
+                })
 
+            db.session.add_all(backups)
+            db.session.add(save)
+            db.session.commit()
+        else:
+            flash("Ошибка! Нет хостов для создания точки сохранения")
+    
+    return redirect(url_for('lab_control', lab_id=lab_id))
+
+@app.route('/save/delete/<save_id>', methods=['POST'])
+def save_delete(save_id):
+    form = EmptyForm()
+    
+    if form.validate_on_submit():
+        save = db.session.get(Save, int(save_id))
+        lab_id = save.lab_id
+        db.session.delete(save)
+        db.session.commit()
+        flash("Точка сохранения успешно удалена: {}".format(save.comment))
+        return redirect(url_for('lab_control', lab_id=lab_id))
+    return redirect(url_for('lab_control', lab_id=lab_id))
+
+@app.route('/save/restore/<save_id>', methods=['POST'])
+def save_restore(save_id):
+    form = EmptyForm(save_id)
+    
+    save = db.session.get(Save, int(save_id))
+    lab_id = save.lab_id
+    
+    if form.validate_on_submit:
+        backups = db.session.scalars(save.backups.select()).all()
+        if backups:
+            task_list = []
+            for backup in backups:
+                task_list.append(task_restore.s(backup.host.ip, backup.uid))
+            task_group = group(task_list)
+            r = task_group.delay()
+            r.save()
+            set_job_state({
+                    'job_type': 'load',
+                    'result_id': r.id,
+                    'status': 'loading',
+                    'lab_id': str(lab_id)
+                })
+
+        else:
+            flash("Ошибка! Нет бекапов для загрузки точки сохранения")
+    return redirect(url_for('lab_control', lab_id=lab_id))
+
+@app.route('/save/default/<save_id>', methods=['POST'])
+def save_default(save_id):
+    form = EmptyForm()
+    
+    if form.validate_on_submit():
+        save = db.session.get(Save, int(save_id))
+        save.is_default = True
+        save.set_default()
+        lab_id = save.lab_id
+        db.session.commit()
+        flash("Установлена точка сохранения по умолчанию: {}".format(save.comment))
+        return redirect(url_for('lab_control', lab_id=lab_id))
+    return redirect(url_for('lab_control', lab_id=lab_id))
 
 
 

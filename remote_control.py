@@ -35,7 +35,7 @@ class SSHConn(Connection):
 
 
 
-def backup(host, backup_uid: str, comment: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, link_path: str = None):
+def backup(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, link_path: str = None):
     """Makes backup of files in Linux-based system"""
     
     if backup_dir[-1] != '/':
@@ -56,16 +56,15 @@ def backup(host, backup_uid: str, comment: str, backup_dir: str = RemoteCtlConf.
     "{link_dest} / {path}".format(backup_dir=backup_dir, path=path, link_dest=link_dest)
     
     try:
-        # with SSHConn(host=host) as conn:
-        #     result = conn.sudo(backup_cmd, hide=True)
-        pass
+        with SSHConn(host=host) as conn:
+            result = conn.sudo(backup_cmd, hide=True)
+        # pass
     except Exception as err:
         return {"backup_id": backup_uid,
             "host": host,
             "backup_cmd": backup_cmd,
             "link_path": link_path or "",
             "path": path,
-            "comment": comment,
             "cmd_result": '',
             "cmd_error": repr(err),
             "cmd_code": 1
@@ -75,8 +74,7 @@ def backup(host, backup_uid: str, comment: str, backup_dir: str = RemoteCtlConf.
             "host": host,
             "backup_cmd": backup_cmd,
             "link_path": link_path or "",
-            "path": path,
-            "comment": comment,
+            "path": path
             # "cmd_error": result.stderr,
             # "cmd_code": result.exited
             }

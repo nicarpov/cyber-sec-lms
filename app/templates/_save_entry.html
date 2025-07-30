@@ -1,0 +1,33 @@
+<li class="list-group-item ">
+    <div class="d-flex flex-column">
+        <div class="d-flex">
+            <div class="text-muted me-3 p-1">{{ save.uid[-6:] }} </div>
+            <div class="load me-2">
+                <form action="{{ url_for('save_restore', save_id=save.id) }}" method="post">
+                    {{ form.hidden_tag() }}
+                    {{ form.submit(value="Загрузить", class="btn btn-sm btn-success") }}
+                </form>
+                
+            </div>
+            <div class="delete me-2">
+                <form action="{{ url_for('save_delete', save_id=save.id) }}" method="post">
+                    {{ form.hidden_tag() }}
+                    {{ form.submit(value="Удалить", class="btn btn-sm btn-danger") }}
+                </form>
+            </div>
+            <div class="default me-2">
+                {% if save.is_default %}
+                    <div class="btn btn-sm btn-outline-success">По умолчанию</div>
+                {% else %}
+                    <form action="{{ url_for('save_default', save_id=save.id) }}" method="post">
+                        {{ form.hidden_tag() }}
+                        {{ form.submit(value="По умолчанию", class="btn btn-sm btn-outline-secondary") }}
+                    </form>
+                {% endif %}
+                
+            </div>
+        </div>
+        <div class="text-body me-3 p-1">{{ save.comment }} </div>
+    </div>
+    
+</li>

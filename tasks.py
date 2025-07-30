@@ -4,7 +4,7 @@ from celery.schedules import crontab
 import time
 from celery.result import AsyncResult, GroupResult
 from celeryconfig import CELERY
-from remote_control import reboot, isAvailable, search_hosts
+from remote_control import reboot, isAvailable, search_hosts, backup, restore
 from data_access import set_unreg_hosts, get_unreg_hosts
 from remote_ctl_config import RemoteCtlConf as rconf
 
@@ -50,20 +50,15 @@ def task_reboot(host):
     return r
 
 @celery_app.task
-def backup(host: str, comment: str, path: str, link: str = None):
-    time.sleep(3)
-    return {"backup_id": 1,
-            "host": host,
-            "comment": comment,
-            }
+def task_backup(host: str, backup_uid: str, link: str = None):
+    return backup(host=host, backup_uid=backup_uid, backup_dir=rconf.BACKUP_DIR)
+    
 
 @celery_app.task
-def restore(host: str, backup_id: str):
-    time.sleep(3)
+def task_restore(host: str, backup_id: str):
+    return restore(host, backup_id)
     
-    return {"backup_id": backup_id,
-            "host": host,
-            }
+    
 
 @celery_app.task
 def task_isOnline(host):

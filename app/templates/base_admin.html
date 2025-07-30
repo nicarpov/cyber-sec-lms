@@ -24,7 +24,22 @@
                 
             {% endif %}
         {% endwith %}
-          
+        <div class="header-top h2 mt-5">Панель администратора учебной платформы</div>
+        <div id="loading-alert" class="alert alert-danger hidden">
+            <strong>ОСТОРОЖНО!</strong> Выполняется подготовка систем. 
+            Не отключайте питание устройств. 
+            
+        </div>
+        <div id="ready-alert" class="alert alert-success hidden">
+            <strong>ГОТОВО!</strong> Системы готовы к выполнению лабораторной работы. 
+        </div> 
+        <div id="reboot-alert" class="alert alert-warning hidden">
+            Подготовка почти завершена. Перезагрузите ноутбук.
+            
+        </div>
+        <div id="reboot-eta-alert" class="alert alert-warning hidden">
+            Ноутбук перезагрузится через 5 секунд. 
+        </div>
         {% block content %}
             
         {% endblock %}
@@ -33,6 +48,6 @@
     
     <script src="{{ url_for('static', filename='bootstrap/bootstrap.bundle.min.js') }}"></script>
     <script src=" {{ url_for('static', filename='js/stateMonitoring.js')}}"></script>
-    <!-- <script src=" {{ url_for('static', filename='js/admin.js')}}"></script> -->
+    <script src=" {{ url_for('static', filename='js/admin.js')}}"></script>
 </body>
 </html>
