@@ -283,9 +283,6 @@ def host_create():
     if form.validate_on_submit():
         host = Host(name=form.name.data, ip=form.ip.data)
         db.session.add(host)
-        unreg_hosts = get_unreg_hosts()
-        unreg_hosts.remove(host.ip)
-        set_unreg_hosts(unreg_hosts)
         db.session.commit()
         flash("Успешно зарегистрирован хост: {} IP: {}".format(host.name, host.ip))
         return redirect(url_for('admin'))

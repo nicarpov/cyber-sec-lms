@@ -37,27 +37,39 @@
             
         </div>
     </div>
+
     <div class="hosts-list">
-        <ul class="list-group flex-column align-content-start" style="width: 100%">
+        {% if not hosts %}
+            <p class="text-muted">Не зарегистрирован ни один хост.
+            </p>
+        {% endif %}
+        <p class="text-muted">
+            <br>Выберите хост из списка "Обнаруженные хосты", чтобы добавить его.
+            <br>Или нажмите <strong>"Добавить"</strong>, чтобы указать параметры вручную.
+        </p>
+        
+            
             {% if hosts %}
+                <ul class="list-group  align-content-start" style="width: 100%">
                 {% for host in hosts %}
                     {% include '_host_entry.html' %}
                 {% endfor %}
-            {% else %}
-                <p class="text-muted">Не зарегистрирован ни один хост.
-                    Нажмите <strong>"Добавить"</strong>.
-                </p>
+                </ul>
             {% endif %}
-            
-        </ul>
+        
     </div>
     
-    <div class="name h6 p-1 me-4 ms-2 text-secondary">Незарегистрированные хосты</div>
-    <div id="unregs-list" class="d-flex">
+    <div class="name h5 p-1 me-4 ms-2 text-success">Обнаруженные хосты</div>
+    {% if unreg_hosts %}
+        <div id="unregs-list" class="d-flex flex-wrap">
             {% for ip in unreg_hosts %}
                 {% include '_unreg_entry.html'   %}
             {% endfor %}
-    </div>
+        </div>
+    {% else %}
+        <div class="name h5 p-1 me-4 ms-4 text-secondary">Хосты не обнаружены</div>
+    {% endif %}
+    
     
 
     

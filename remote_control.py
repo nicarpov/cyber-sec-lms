@@ -170,12 +170,15 @@ def reboot(host):
 
 def search_hosts(nmap_target):
     host_list = []
-    with SSHConn(host='localhost') as conn:
-        res = conn.sudo('nmap -sn {} -oG -'.format(nmap_target), hide=True, timeout=30)
-        lines = res.stdout.split('\n')
-        host_lines = list(filter(lambda l: l.startswith('Host:'), lines))
-        host_list = [line.split()[1] for line in host_lines]
-    return host_list
+    try:
+        with SSHConn(host='localhost') as conn:
+            res = conn.sudo('nmap -sn {} -oG -'.format(nmap_target), hide=True)
+            lines = res.stdout.split('\n')
+            host_lines = list(filter(lambda l: l.startswith('Host:'), lines))
+            host_list = [line.split()[1] for line in host_lines]
+        return host_list
+    except:
+        return []
         
 
 def main():
