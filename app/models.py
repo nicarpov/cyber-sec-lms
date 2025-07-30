@@ -9,7 +9,7 @@ class Host(db.Model):
     ip: so.Mapped[str] = so.mapped_column(sa.String(15), unique=True)
     name: so.Mapped[str] = so.mapped_column(sa.String(32), unique=True)
     backups: so.WriteOnlyMapped['Backup'] = so.relationship(back_populates='host')
-    
+
     def __repr__(self):
         return f"<Host {self.name} ip: {self.ip}>"
     
@@ -17,7 +17,8 @@ class Lab(db.Model):
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
     name: so.Mapped[str] = so.mapped_column(sa.String(256), unique=True)
     saves: so.WriteOnlyMapped['Save'] = so.relationship(back_populates='lab')
-
+    description: so.Mapped[str] = so.mapped_column(sa.String(1000), unique=True)
+    
     def __repr__(self):
         return f"<Lab {self.name}>"
 
@@ -26,6 +27,7 @@ class Save(db.Model):
     lab_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(Lab.id))
     lab: so.Mapped[Lab] = so.relationship(back_populates='saves')
     backups: so.WriteOnlyMapped['Backup'] = so.relationship(back_populates='save')
+    comment: so.Mapped[str] = so.mapped_column(sa.String(256), unique=True)
 
 class Backup(db.Model):
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
