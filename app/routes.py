@@ -29,11 +29,7 @@ def index():
     if state:
         return redirect(url_for('lab_room', lab_id=state['lab_id']))
 
-    lab_list = []
-    for id in labs:
-        lab = labs[id]
-        lab['id'] = id
-        lab_list.append(lab)
+    lab_list = db.session.scalars(sa.select(Lab))
     return render_template('index.html', labs=lab_list)
 
 @app.route('/login')
@@ -212,36 +208,30 @@ def lab_delete(lab_id):
 
 @app.route('/lab/start/<lab_id>', methods=['POST'])
 def lab_start(lab_id):
-
     form = EmptyForm()
+    
+    save = db.session.scalar(sa.select(Save).where(Save.is_default == True))
+    lab_id = save.lab_id
+    
     if form.validate_on_submit:
-            
-        # backup_ids = ["123", "234", "345"] # TO-DO: get hosts backup ids for lab 
-        if MOCKED:
-            hosts = [1, 2, 3, 4]
-            backup_ids = [ 2, 3, 4, 5]
-            job = group([add.s(host, id) for host, id in zip(hosts, backup_ids)])
-            r = job.delay()
+        backups = db.session.scalars(save.backups.select()).all()
+        if backups:
+            task_list = []
+            for backup in backups:
+                task_list.append(task_restore.s(backup.host.ip, backup.uid))
+            task_group = group(task_list)
+            r = task_group.delay()
             r.save()
             set_job_state({
+                    'job_type': 'load',
                     'result_id': r.id,
                     'status': 'loading',
                     'lab_id': str(lab_id)
                 })
-            
-            
+
         else:
-            # job = group([restore.s(host, id) for host, id in zip(hosts, backup_ids)])
-            # r = job.delay()
-            # task_id.append(r.id)
-            
-            # if нет задач backup и restore:
-            #   1. Получить список хосты и пути к бекапам для лабы с данным id включая сам ноут
-            #   2. Отправить на celery группу задач по восстановлению бекапов
-            #   3. Положить id задачи в redis
-            pass
-        form = EmptyForm()
-        return redirect(url_for('lab_room', lab_id=lab_id))
+            flash("Ошибка! Нет бекапов для загрузки точки сохранения")
+    return redirect(url_for('lab_room', lab_id=lab_id))
 
 @app.route('/lab/finish/<lab_id>', methods=['POST'])
 def lab_finish(lab_id):
@@ -256,11 +246,10 @@ def lab_finish(lab_id):
 def lab_room(lab_id):
     # lab['id'] = lab_id
     
-    lab = labs[lab_id]
-    lab['id'] = lab_id
+    lab = db.session.get(Lab, int(lab_id))
     
     form = EmptyForm()
-    return render_template("lab_room.html", lab=lab, form=form, current_lab=current_lab)
+    return render_template("lab_room.html", lab=lab, form=form)
 
 @app.route("/lab/manual/<lab_id>")
 def lab_manual(lab_id):
