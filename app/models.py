@@ -5,33 +5,41 @@ from app import db
 
 
 class Host(db.Model):
-    id: so.Mapped[int] = so.MappedColumn(primary_key=True)
-    ip: so.Mapped[str] = so.MappedColumn(sa.String(15), unique=True)
-    name: so.Mapped[str] = so.MappedColumn(sa.String(32), unique=True)
-
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    ip: so.Mapped[str] = so.mapped_column(sa.String(15), unique=True)
+    name: so.Mapped[str] = so.mapped_column(sa.String(32), unique=True)
+    backups: so.WriteOnlyMapped['Backup'] = so.relationship(back_populates='host')
+    
     def __repr__(self):
         return f"<Host {self.name} ip: {self.ip}>"
     
 class Lab(db.Model):
-    id: so.Mapped[int] = so.MappedColumn(primary_key=True)
-    name: so.Mapped[str] = so.MappedColumn(sa.String(256), unique=True)
-    
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    name: so.Mapped[str] = so.mapped_column(sa.String(256), unique=True)
+    saves: so.WriteOnlyMapped['Save'] = so.relationship(back_populates='lab')
 
     def __repr__(self):
         return f"<Lab {self.name}>"
 
+class Save(db.Model):
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    lab_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(Lab.id))
+    lab: so.Mapped[Lab] = so.relationship(back_populates='saves')
+    backups: so.WriteOnlyMapped['Backup'] = so.relationship(back_populates='save')
+
 class Backup(db.Model):
-    id: so.Mapped[int] = so.MappedColumn(primary_key=True)
-    uuid: so.Mapped[str] = so.MappedColumn(sa.String(36), unique=True)
-    comment: so.Mapped[str] = so.MappedColumn(sa.String(256), unique=True)
-    host_id: so.Mapped[int] = so.MappedColumn(sa.ForeignKey(Host.id))
-    dir: so.Mapped[str] = so.MappedColumn(sa.String(256), nullable=True)
-    # host: so.WriteOnlyMapped['Host'] = so.relationship(back_populates='backups')
-    lab_id: so.Mapped[int] = so.MappedColumn(sa.ForeignKey(Lab.id))
-    # lab: so.WriteOnlyMapped['Lab'] = so.relationship(back_populates='backups')
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    uuid: so.Mapped[str] = so.mapped_column(sa.String(36), unique=True)
+    comment: so.Mapped[str] = so.mapped_column(sa.String(256), unique=True)
+    host_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(Host.id))
+    dir: so.Mapped[str] = so.mapped_column(sa.String(256), nullable=True)
+    host: so.Mapped[Host] = so.relationship(back_populates='backups')
+    save_id: so.Mapped[int] = so.MappedColumn(sa.ForeignKey(Save.id))
+    save: so.Mapped[Save] = so.relationship(back_populates='backups')
 
     def __repr__(self):
         return f"<Backup {self.uuid}>"
+
 
 # models will be here later
 user = {

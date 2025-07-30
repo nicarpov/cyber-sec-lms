@@ -50,8 +50,14 @@
                 </div>
             </div>
             <div class="d-flex flex-column ms-4">
-                
-                
+                <div class="h3 d-flex me-3">Действия</div>
+                <div class="lab-info d-flex mb-5 shadow-sm p-2">
+                    <form action="{{ url_for('lab_backup', lab_id=lab.id)}}" method="post" >
+                            {{form.hidden_tag()}}
+                            {{form.submit(value="Сохранить состояния устройств", class="btn btn-sm btn-outline-success")}}
+                    </form>
+                    
+                </div>
             </div>
         </div>
         <div class="d-flex">
