@@ -25,6 +25,7 @@
             {% endif %}
             
         </ul>
+    
     <div class="header-hosts d-flex justify-content-start mt-4">
         <div class="name h4 p-1 me-4">Хосты</div>
         <div class="create-btn">
@@ -36,24 +37,28 @@
             
         </div>
     </div>
-    <ul class="list-group flex-column align-content-start" style="width: 100%">
-        {% if hosts %}
-            {% for host in hosts %}
-                {% include '_host_entry.html'   %}
-            {% endfor %}
-        {% else %}
-            <p class="text-muted">Не зарегистрирован ни один хост.
-                Нажмите <strong>"Добавить"</strong>.
-            </p>
-        {% endif %}
-        
-    </ul>
+    <div class="hosts-list">
+        <ul class="list-group flex-column align-content-start" style="width: 100%">
+            {% if hosts %}
+                {% for host in hosts %}
+                    {% include '_host_entry.html' %}
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">Не зарегистрирован ни один хост.
+                    Нажмите <strong>"Добавить"</strong>.
+                </p>
+            {% endif %}
+            
+        </ul>
+    </div>
     
-    <div id="unregs-list" class="d-flex  align-content-start" style="width: 100%">
+    <div class="name h6 p-1 me-4 ms-2 text-secondary">Незарегистрированные хосты</div>
+    <div id="unregs-list" class="d-flex">
             {% for ip in unreg_hosts %}
                 {% include '_unreg_entry.html'   %}
             {% endfor %}
     </div>
+    
 
     
 {% endblock %}

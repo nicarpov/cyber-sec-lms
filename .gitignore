@@ -198,3 +198,4 @@ cython_debug/
 test.py
 app/static/manuals/*
 *.db
+celerybeat*

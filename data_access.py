@@ -1,6 +1,7 @@
 from redis_config import REDIS_HOST, REDIS_PORT, REDIS_DB
 import redis
 import json
+from remote_control import search_hosts
 
 def redis_conn():
     return redis.Redis(REDIS_HOST, REDIS_PORT, REDIS_DB, decode_responses=True)
@@ -25,7 +26,7 @@ def flush_job_state():
     with redis_conn() as conn:
         return conn.delete('job_state')
     
-def get_hosts_state_id():
+def get_hosts_state():
     '''
     redis key - "hosts_state"
     state = {
@@ -34,15 +35,15 @@ def get_hosts_state_id():
     }
     '''
     with redis_conn() as conn:
-        return conn.get('hosts_state_id')
+        return conn.hgetall('hosts_state')
     
-def set_hosts_state_id(id):
+def set_hosts_state(state):
     with redis_conn() as conn:
-        return conn.set('hosts_state_id', value=id)
+        return conn.hset('hosts_state', mapping=state)
     
-def flush_hosts_state_id():
+def flush_hosts_state():
     with redis_conn() as conn:
-        return conn.delete('hosts_state_id')
+        return conn.delete('hosts_state')
     
 def get_unreg_hosts():
     '''
@@ -62,3 +63,6 @@ def get_unreg_hosts():
 def set_unreg_hosts(hosts):
     with redis_conn() as conn:
         return conn.set('unreg_hosts', value=json.dumps(hosts))
+    
+
+

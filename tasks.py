@@ -1,10 +1,13 @@
 from celery import Celery, group
+from celery.schedules import crontab
 
 import time
 from celery.result import AsyncResult, GroupResult
 from celeryconfig import CELERY
 from remote_control import reboot, isAvailable, search_hosts
-from remote_ctl_config import RemoteCtlConf
+from data_access import set_unreg_hosts, get_unreg_hosts
+from remote_ctl_config import RemoteCtlConf as rconf
+
 # PKEY_PATH, SUDO_PASS, REMOTE_USER, REMOTE_PORT, BACKUP_DIR
 
 
@@ -15,8 +18,22 @@ celery_app = Celery('tasks',
             
             )
 
+@celery_app.on_after_configure.connect
+def setup_periodic_tasks(sender: Celery, **kwargs):
+    sender.add_periodic_task(10.0, task_search_hosts.s(rconf.SUBNET), name="Search hosts")
+
 celery_app.config_from_object(CELERY)
 
+
+
+# celery_app.conf.beat_schedule = {
+#     'search-hosts-every-10-seconds': {
+#         'task': 'tasks.task_search_hosts',
+#         'schedule': 10.0,
+#         'args': (rconf.SUBNET)
+#     },
+# }
+celery_app.conf.timezone = 'UTC'
 
 @celery_app.task()
 def add(x, y):
@@ -54,8 +71,13 @@ def task_isOnline(host):
 
 @celery_app.task
 def task_search_hosts(nmap_target):
-    res = search_hosts(nmap_target=nmap_target)
-    return res
+    
+    unreg_hosts = search_hosts(nmap_target=nmap_target) 
+    
+    
+    
+    set_unreg_hosts(unreg_hosts)
+    return unreg_hosts
 
 def allIsDone(groupResId):
     try:
@@ -68,6 +90,7 @@ def allIsDone(groupResId):
         print("allIsDone Error:", err)
         return False
     
+
 
 if __name__ == "__main__":
     # g = group([task_reboot.s('localhost') for i in range(4)])

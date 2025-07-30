@@ -13,10 +13,11 @@ from uuid import uuid4
 import time
 import json
 from data_access import get_job_state, set_job_state, \
-get_hosts_state_id, set_hosts_state_id, flush_hosts_state_id, \
+get_hosts_state, set_hosts_state, flush_hosts_state, \
 get_unreg_hosts, set_unreg_hosts
 from remote_ctl_config import RemoteCtlConf as rconf
 
+web_socks = []
 
 # MAIN ROUTES
 @app.route('/')
@@ -49,8 +50,14 @@ def admin():
     labs = db.session.scalars(sa.select(Lab).order_by(Lab.name)).all()
     hosts = db.session.scalars(sa.select(Host).order_by(Host.name)).all()
     
-    unreg_hosts = get_unreg_hosts()
-    print(unreg_hosts)
+    discovered_hosts = get_unreg_hosts() 
+    unreg_hosts = []
+
+    for host in discovered_hosts:
+        reg_host = db.session.scalar(sa.select(Host).where(Host.ip == host))
+        if not reg_host:
+            unreg_hosts.append(host)
+            
     return render_template('admin.html', labs=labs, hosts=hosts, unreg_hosts=unreg_hosts)
 
 @sock.route('/ws/job_state')
@@ -83,41 +90,50 @@ def job_state(ws):
         ws.send(json.dumps(state))
         time.sleep(1)
 
-@sock.route('/ws/hosts_state')
-def hosts_state(ws):
-    '''
-    redis key - "hosts_state"
-    state = {
+# @sock.route('/ws/hosts_state')
+# def hosts_state(ws):
+#     '''
+#     redis key - "hosts_state"
+#     state = {
     
-    }
-    '''
+#     }
+#     '''
+#     web_socks.append(ws)
+#     while True:
+#         task_state = get_hosts_state()
+#         # print(task_state)
+#         if task_state:
+#             res = AsyncResult(task_state['id'], app=celery_app)
+#             if res.ready():
+#                 hosts = res.get()
+#                 registered_hosts = []
+#                 unreg_hosts = []
+#                 for host in hosts:
+#                     reg_host = db.session.scalar(sa.select(Host).where(Host.ip == host))
+#                     if reg_host:
+#                         registered_hosts.append(host)
+#                     else:
+#                         unreg_hosts.append(host)
+                
+#                 # ws.send(json.dumps(state))
+#                 set_unreg_hosts(unreg_hosts)
+#             t1 = int(time.time())
+#             t0 = int(get_hosts_state()['sent_time'])
+#             if t1 - t0 > 10:
+#                 print('t0: ', t0, 't1: ', t1)
+#                 t0 = t1
+#                 task = task_search_hosts.apply_async(args=[rconf.SUBNET])
+#                 print("Task sent main", task.id)
+                
+#                 set_hosts_state({'id': task.id, 'sent_time': t1})
+                
+#         else:
+#             task = task_search_hosts.apply_async(args=[rconf.SUBNET])
+#             t0 = int(time.time())
+            
+#             set_hosts_state({'id': task.id, 'sent_time': t0})
     
-    while True:
-        state_id = get_hosts_state_id()
-        if state_id:
-            res = AsyncResult(state_id, app=celery_app)
-            if res.ready():
-                hosts = res.get()
-                registered_hosts = []
-                unreg_hosts = []
-                for host in hosts:
-                    reg_host = db.session.scalar(sa.select(Host).where(Host.ip == host))
-                    if reg_host:
-                        registered_hosts.append(host)
-                    else:
-                        unreg_hosts.append(host)
-                state = {
-                    "registered": registered_hosts,
-                    "unregistered": unreg_hosts
-                }
-                # ws.send(json.dumps(state))
-                set_unreg_hosts(unreg_hosts)
-                task = task_search_hosts.apply_async(args=[rconf.SUBNET])
-                set_hosts_state_id(task.id)
-        else:
-            task = task_search_hosts.apply_async(args=[rconf.SUBNET])
-            set_hosts_state_id(task.id)
-        time.sleep(10)
+        
             
 
 @app.route("/reboot", methods=['POST'])
