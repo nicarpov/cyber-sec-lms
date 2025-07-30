@@ -1,18 +1,21 @@
 from app import app
-from flask import render_template, redirect, url_for, flash
+from flask import render_template, redirect, url_for, flash, request
 from app.forms import EmptyForm, HostCreate, LabCreate
 from app.models import labs, current_lab, task_id, hosts, Host, Lab, Backup
 import sqlalchemy as sa
 from app import db
 from app import sock
-from tasks import celery_app, allIsDone, add, backup, restore, task_reboot
+from tasks import celery_app, allIsDone, add, backup, restore, task_reboot, task_search_hosts
 from celery import group
 from celery.result import AsyncResult
 from test_app import MOCKED
 from uuid import uuid4
 import time
 import json
-from data_access import redis_conn, get_job_state, set_job_state
+from data_access import get_job_state, set_job_state, \
+get_hosts_state_id, set_hosts_state_id, flush_hosts_state_id, \
+get_unreg_hosts, set_unreg_hosts
+from remote_ctl_config import RemoteCtlConf as rconf
 
 
 # MAIN ROUTES
@@ -46,8 +49,9 @@ def admin():
     labs = db.session.scalars(sa.select(Lab).order_by(Lab.name)).all()
     hosts = db.session.scalars(sa.select(Host).order_by(Host.name)).all()
     
-    
-    return render_template('admin.html', labs=labs, hosts=hosts)
+    unreg_hosts = get_unreg_hosts()
+    print(unreg_hosts)
+    return render_template('admin.html', labs=labs, hosts=hosts, unreg_hosts=unreg_hosts)
 
 @sock.route('/ws/job_state')
 def job_state(ws):
@@ -78,6 +82,43 @@ def job_state(ws):
                     
         ws.send(json.dumps(state))
         time.sleep(1)
+
+@sock.route('/ws/hosts_state')
+def hosts_state(ws):
+    '''
+    redis key - "hosts_state"
+    state = {
+    
+    }
+    '''
+    
+    while True:
+        state_id = get_hosts_state_id()
+        if state_id:
+            res = AsyncResult(state_id, app=celery_app)
+            if res.ready():
+                hosts = res.get()
+                registered_hosts = []
+                unreg_hosts = []
+                for host in hosts:
+                    reg_host = db.session.scalar(sa.select(Host).where(Host.ip == host))
+                    if reg_host:
+                        registered_hosts.append(host)
+                    else:
+                        unreg_hosts.append(host)
+                state = {
+                    "registered": registered_hosts,
+                    "unregistered": unreg_hosts
+                }
+                # ws.send(json.dumps(state))
+                set_unreg_hosts(unreg_hosts)
+                task = task_search_hosts.apply_async(args=[rconf.SUBNET])
+                set_hosts_state_id(task.id)
+        else:
+            task = task_search_hosts.apply_async(args=[rconf.SUBNET])
+            set_hosts_state_id(task.id)
+        time.sleep(10)
+            
 
 @app.route("/reboot", methods=['POST'])
 def reboot():
@@ -226,10 +267,18 @@ def host_create():
     if form.validate_on_submit():
         host = Host(name=form.name.data, ip=form.ip.data)
         db.session.add(host)
+        unreg_hosts = get_unreg_hosts()
+        unreg_hosts.remove(host.ip)
+        set_unreg_hosts(unreg_hosts)
         db.session.commit()
         flash("Успешно зарегистрирован хост: {} IP: {}".format(host.name, host.ip))
         return redirect(url_for('admin'))
-    
+    return render_template('host_create.html', form=form)
+
+@app.route("/host/create/<ip>", methods=['GET'])
+def host_create_fast(ip):
+    form = HostCreate()
+    form.ip.data = ip
     return render_template('host_create.html', form=form)
 
 @app.route("/host/edit", methods=['GET', 'POST'])

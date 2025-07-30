@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link href="{{ url_for('static', filename='bootstrap/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    {% if title %}
+        <title>{{ title }}</title>
+    {% else %}
+        <title>LMS</title>
+    {% endif %}
+</head>
+<body>
+    <div id="container" class="container justify-content-center">
+        {% with messages = get_flashed_messages()  %}
+            {% if messages %}
+            
+                {% for message in messages %}
+                    {% include '_flash.html'   %}
+                {% endfor %}
+            
+                
+            {% endif %}
+        {% endwith %}
+          
+        {% block content %}
+            
+        {% endblock %}
+         
+    </div>
+    
+    <script src="{{ url_for('static', filename='bootstrap/bootstrap.bundle.min.js') }}"></script>
+    <script src=" {{ url_for('static', filename='js/stateMonitoring.js')}}"></script>
+    <!-- <script src=" {{ url_for('static', filename='js/admin.js')}}"></script> -->
+</body>
+</html>

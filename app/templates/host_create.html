@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'base_admin.html' %}
 
 {% block content %}
     <div class="d-flex flex-column room mt-5">
@@ -14,7 +14,7 @@
             </div>
             
         </div>
-        <form action="" method="post">
+        <form action="{{ url_for('host_create') }}" method="post">
             {{ form.hidden_tag() }}
             <div class="name d-flex flex-column" style="width:30%">
                 {{  form.name.label }}

@@ -9,3 +9,4 @@ class RemoteCtlConf():
     REMOTE_PORT = os.environ.get('REMOTE_PORT') or 22
     SUDO_PASS = os.environ.get('SUDO_PASS') or '123'
     BACKUP_DIR =os.environ.get('REMOTE_BACKUP_DIR') or '/backup'
+    SUBNET = os.environ.get('SUBNET') or '192.168.0.0/24'

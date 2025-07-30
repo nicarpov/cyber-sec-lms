@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'base_admin.html' %}
 
 {% block content %}
     <div class="header-top h2 mt-5">Панель администратора учебной платформы</div>
@@ -48,8 +48,12 @@
         {% endif %}
         
     </ul>
-
+    
+    <div id="unregs-list" class="d-flex  align-content-start" style="width: 100%">
+            {% for ip in unreg_hosts %}
+                {% include '_unreg_entry.html'   %}
+            {% endfor %}
+    </div>
 
     
-
 {% endblock %}
