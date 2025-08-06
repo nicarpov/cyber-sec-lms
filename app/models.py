@@ -8,7 +8,8 @@ class Host(db.Model):
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
     ip: so.Mapped[str] = so.mapped_column(sa.String(15), unique=True)
     name: so.Mapped[str] = so.mapped_column(sa.String(32), unique=True)
-    backups: so.WriteOnlyMapped['Backup'] = so.relationship(back_populates='host', cascade='all, delete-orphan', passive_deletes=True)
+    os_type: so.Mapped[str] = so.mapped_column(sa.String(32), default='linux', nullable=True)
+    backups: so.WriteOnlyMapped['Backup'] = so.relationship(back_populates='host', cascade='save-update, all, delete-orphan', passive_deletes=True)
 
     def __repr__(self):
         return f"<Host {self.name} ip: {self.ip}>"
@@ -16,9 +17,16 @@ class Host(db.Model):
 class Lab(db.Model):
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
     name: so.Mapped[str] = so.mapped_column(sa.String(256), unique=True)
-    saves: so.WriteOnlyMapped['Save'] = so.relationship(back_populates='lab', cascade='all, delete-orphan', passive_deletes=True)
+    saves: so.WriteOnlyMapped['Save'] = so.relationship(back_populates='lab', cascade='save-update, all, delete-orphan', passive_deletes=True)
     description: so.Mapped[str] = so.mapped_column(sa.String(1000), nullable=True)
-    
+    hidden: so.Mapped[bool] = so.mapped_column(sa.Boolean, default=False, nullable=True)
+
+    def hide(self):
+        self.hidden = True
+
+    def show(self):
+        self.hidden = False
+
     def __repr__(self):
         return f"<Lab {self.name}>"
 
@@ -27,21 +35,22 @@ class Save(db.Model):
     uid: so.Mapped[str] = so.mapped_column(sa.String(36), unique=True)
     lab_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(Lab.id, ondelete='CASCADE'))
     lab: so.Mapped[Lab] = so.relationship(back_populates='saves')
-    backups: so.WriteOnlyMapped['Backup'] = so.relationship(back_populates='save', cascade='all, delete-orphan', passive_deletes=True)
+    backups: so.WriteOnlyMapped['Backup'] = so.relationship(back_populates='save', cascade='save-update, all, delete-orphan', passive_deletes=True)
     comment: so.Mapped[str] = so.mapped_column(sa.String(256))
-    is_default: so.Mapped[bool] = so.mapped_column(sa.Boolean(), default=0, nullable=True)
+    is_default: so.Mapped[bool] = so.mapped_column(sa.Boolean(), default=False)
 
     def validate_default(self):
-        default_save = db.session.scalar(sa.select(Save).where(Save.is_default == 1))
-        if not default_save:
-            self.is_default = 1
+        default_save = db.session.scalar(sa.select(Save).where(Save.is_default == True))
+        if default_save is None:
+            self.is_default = True
+            
 
     def set_default(self):
-        default_save = db.session.scalar(sa.select(Save).where(Save.is_default == 1))
+        default_save = db.session.scalar(sa.select(Save).where(Save.is_default == True))
         if default_save:
-            default_save.is_default = 0
-        self.is_default = 1
-        db.session.commit()
+            default_save.is_default = False
+        self.is_default = True
+        
 
 class Backup(db.Model):
     id: so.Mapped[int] = so.mapped_column(primary_key=True)

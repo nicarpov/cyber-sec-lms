@@ -6,7 +6,8 @@ from app.models import labs, current_lab, task_id, hosts, Host, Lab, Backup, Sav
 import sqlalchemy as sa
 from app import db
 from app import sock
-from tasks import celery_app, allIsDone, add, task_backup, task_restore, task_reboot, task_search_hosts
+from tasks import celery_app, allIsDone, add, task_backup, task_restore, task_reboot, task_search_hosts, \
+    task_backup_routeros, task_restore_routeros
 from celery import group
 from celery.result import AsyncResult
 from test_app import MOCKED
@@ -29,7 +30,7 @@ def index():
     if state:
         return redirect(url_for('lab_room', lab_id=state['lab_id']))
 
-    lab_list = db.session.scalars(sa.select(Lab))
+    lab_list = db.session.scalars(sa.select(Lab).where(Lab.hidden == False).order_by(Lab.name))
     return render_template('index.html', labs=lab_list)
 
 @app.route('/login')
@@ -58,7 +59,9 @@ def admin():
     state = get_job_state()
     if state and state['status'] == 'ready':
         flush_job_state()
-    return render_template('admin.html', labs=labs, hosts=hosts, unreg_hosts=unreg_hosts)
+
+    form = EmptyForm()
+    return render_template('admin.html', labs=labs, hosts=hosts, unreg_hosts=unreg_hosts, form=form)
 
 @sock.route('/ws/job_state')
 def job_state(ws):
@@ -261,12 +264,40 @@ def lab_manual(lab_id):
     form = EmptyForm()
     return render_template("lab_manual.html", lab=lab, form=form, current_lab=current_lab)
 
+@app.route('/lab/hide/<lab_id>', methods=['POST'])
+def lab_hide(lab_id):
+    form = EmptyForm()
+    
+    if form.validate_on_submit():
+        lab = db.session.get(Lab, int(lab_id))
+        lab.hide()
+        print("HIdden ",lab.hidden)
+        db.session.commit()
+        flash("Изменена видимость лабораторной работы: {}".format(lab.name))
+        return redirect(url_for('admin'))
+    return redirect(url_for('admin'))
+
+@app.route('/lab/show/<lab_id>', methods=['POST'])
+def lab_show(lab_id):
+    form = EmptyForm()
+    
+    if form.validate_on_submit():
+        lab = db.session.get(Lab, int(lab_id))
+        lab.show()
+        print("HIdden ",lab.hidden)
+        db.session.commit()
+        
+
+        flash("Изменена видимость лабораторной работы: {}".format(lab.name))
+        return redirect(url_for('admin'))
+    return redirect(url_for('admin'))
+
 # HOST ROUTES
 @app.route("/host/create", methods=['GET', 'POST'])
 def host_create():
     form = HostCreate()
     if form.validate_on_submit():
-        host = Host(name=form.name.data, ip=form.ip.data)
+        host = Host(name=form.name.data, ip=form.ip.data, os_type=form.os)
         db.session.add(host)
         db.session.commit()
         flash("Успешно зарегистрирован хост: {} IP: {}".format(host.name, host.ip))
@@ -313,15 +344,20 @@ def save_create(lab_id):
         if hosts:
             lab = db.session.get(Lab, int(lab_id))
             save = Save(lab=lab, comment=lab.name, uid=str(uuid4()))
+            db.session.add(save)
             save.validate_default()
+            
             backups = []
             task_list = []
             for host in hosts:
                 backup_uuid = str(uuid4())
                 print("Host ",host.ip, "buid ", backup_uuid)
                 backup = Backup(save=save, host=host, comment=lab.name, uid=backup_uuid, dir=rconf.BACKUP_DIR)
-                backups.append(backup)
-                task_list.append(task_backup.s(host.ip, backup.uid))
+                db.session.add(backup)
+                if host.os_type == 'linux':
+                    task_list.append(task_backup.s(host.ip, backup.uid))
+                elif host.os_type == 'routeros':
+                    task_list.append(task_backup_routeros.s(host.ip, backup.uid))
             task_group = group(task_list)
             r = task_group.delay()
             r.save()
@@ -331,9 +367,11 @@ def save_create(lab_id):
                     'status': 'loading',
                     'lab_id': str(lab_id)
                 })
-
-            db.session.add_all(backups)
-            db.session.add(save)
+            
+            
+            
+            
+            
             db.session.commit()
         else:
             flash("Ошибка! Нет хостов для создания точки сохранения")
@@ -365,7 +403,11 @@ def save_restore(save_id):
         if backups:
             task_list = []
             for backup in backups:
-                task_list.append(task_restore.s(backup.host.ip, backup.uid))
+                if backup.host.os_type == 'linux':
+                    task_list.append(task_restore.s(backup.host.ip, backup.uid))
+                elif backup.host.os_type == 'routeros':
+                    task_list.append(task_restore_routeros.s(backup.host.ip, backup.uid))
+                
             task_group = group(task_list)
             r = task_group.delay()
             r.save()
@@ -386,13 +428,15 @@ def save_default(save_id):
     
     if form.validate_on_submit():
         save = db.session.get(Save, int(save_id))
-        save.is_default = True
+        
         save.set_default()
         lab_id = save.lab_id
         db.session.commit()
         flash("Установлена точка сохранения по умолчанию: {}".format(save.comment))
         return redirect(url_for('lab_control', lab_id=lab_id))
     return redirect(url_for('lab_control', lab_id=lab_id))
+
+
 
 
 

@@ -35,7 +35,7 @@ class SSHConn(Connection):
 
 
 
-def backup(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, link_path: str = None):
+def backup(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, link_path: str = "/backup/initial/"):
     """Makes backup of files in Linux-based system"""
     
     if backup_dir[-1] != '/':
@@ -53,7 +53,7 @@ def backup(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, li
     backup_cmd = "rsync -aAXv " \
     "--rsync-path='mkdir {path}' " \
     "--exclude={{'{backup_dir}*','/dev/*','/proc/*','/sys/*','/tmp/*','/run/*','/mnt/*','/media/*','/lost+found'}}" \
-    "{link_dest} / {path}".format(backup_dir=backup_dir, path=path, link_dest=link_dest)
+    "{link_dest} /home/user/Downloads/ {path}".format(backup_dir=backup_dir, path=path, link_dest=link_dest)
     
     try:
         with SSHConn(host=host) as conn:
@@ -79,6 +79,78 @@ def backup(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, li
             # "cmd_code": result.exited
             }
 
+def backup_routeros(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR):
+    """Makes backup of files in RouterOS-based system"""
+    
+    if backup_dir[-1] != '/':
+        backup_dir = backup_dir + '/'
+    path = os.path.join(backup_dir, backup_uid) + ".backup"
+
+    if platform == 'win32':
+        path = Path(path).as_posix()
+    if path[-1] != '/':
+        path = path + '/'
+
+    backup_cmd = f"/system backup save name={backup_uid}.backup"
+    
+    try:
+        with SSHConn(host=host) as conn:
+            result = conn.run(backup_cmd, hide=True)
+            conn.get(f"{backup_uid}.backup", path)
+        # pass
+    except Exception as err:
+        return {"backup_id": backup_uid,
+            "host": host,
+
+            "path": path,
+            "cmd_result": '',
+            "cmd_error": repr(err),
+            "cmd_code": 1
+            }
+    
+    return {"backup_id": backup_uid,
+            "host": host,
+            "path": path
+            # "cmd_error": result.stderr,
+            # "cmd_code": result.exited
+            }
+
+def restore_routeros(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR):
+    """Makes backup of files in RouterOS-based system"""
+    
+    if backup_dir[-1] != '/':
+        backup_dir = backup_dir + '/'
+    path = os.path.join(backup_dir, backup_uid) + ".backup"
+
+    if platform == 'win32':
+        path = Path(path).as_posix()
+    if path[-1] != '/':
+        path = path + '/'
+
+    restore_cmd = f"/system backup load name={backup_uid}.backup"
+    
+    try:
+        with SSHConn(host=host) as conn:
+            conn.put(path, f"{backup_uid}.backup")
+            result = conn.run(restore_cmd, hide=True)
+            
+        # pass
+    except Exception as err:
+        return {"backup_id": backup_uid,
+            "host": host,
+            "path": path,
+            "cmd_result": '',
+            "cmd_error": repr(err),
+            "cmd_code": 1
+            }
+    
+    return {"backup_id": backup_uid,
+            "host": host,
+            "path": path
+            # "cmd_error": result.stderr,
+            # "cmd_code": result.exited
+            }
+
 
 def restore(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR):
     """Restores backup of files in Linux-based system
@@ -96,7 +168,7 @@ def restore(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR):
     print("Path: ", path)
     backup_cmd = "rsync -aAXv --delete " \
                 "--exclude={{'{backup_dir}*','/dev/*','/proc/*','/sys/*','/tmp/*','/run/*','/mnt/*','/media/*','/lost+found'}} " \
-                "{path} /".format(path=path, backup_dir=backup_dir)
+                "{path} /home/user/Downloads/".format(path=path, backup_dir=backup_dir)
     
     try:
         with SSHConn(host=host) as conn:

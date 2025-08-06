@@ -30,6 +30,13 @@
                 <span style="color: red;">[{{ error }}]</span>
                 {% endfor %}
             </div>
+            <div class="os d-flex flex-column mb-2" style="width:30%">
+                {{  form.os.label }}
+                {{ form.os(size=15) }}
+                {% for error in form.os.errors %}
+                <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
             
             {{ form.submit() }}
         </form>

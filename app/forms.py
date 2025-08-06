@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import SubmitField, StringField
+from wtforms import SubmitField, StringField, SelectField
 from wtforms.validators import IPAddress, ValidationError, DataRequired
 from app import db
 from app.models import Host, Lab
@@ -13,7 +13,7 @@ class EmptyForm(FlaskForm):
 class HostCreate(FlaskForm):
     name = StringField('Имя хоста', validators=[DataRequired()])
     ip = StringField('IP-адрес хоста', validators=[IPAddress(), DataRequired()])
-
+    os = SelectField('Операционная система', choices=['linux', 'routeros'])
     submit = SubmitField('Зарегистрировать хост')
 
     def validate_name(self, name):

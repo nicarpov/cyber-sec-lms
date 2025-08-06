@@ -1,5 +1,22 @@
 <li class="list-group-item ">
-    <a href="{{ url_for('lab_control', lab_id=lab.id) }}" class="text-decoration-none">
+    <div class="d-flex justify-content-between">
+        <a href="{{ url_for('lab_control', lab_id=lab.id) }}" class="text-decoration-none">
             {{ lab.name }}
-    </a>
+        </a>
+        <div class="hide-toggle me-2">
+                {% if lab.hidden %}
+                    <form action="{{ url_for('lab_show', lab_id=lab.id) }}" method="post">
+                        {{ form.hidden_tag() }}
+                        {{ form.submit(value="Скрывать", class="btn btn-sm btn-outline-secondary") }}
+                    </form>
+                {% else %}
+                    <form action="{{ url_for('lab_hide', lab_id=lab.id) }}" method="post">
+                        {{ form.hidden_tag() }}
+                        {{ form.submit(value="Показывать", class="btn btn-sm btn-outline-success") }}
+                    </form>
+                {% endif %}
+                
+            </div>
+    </div>
+    
 </li>
