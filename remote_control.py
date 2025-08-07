@@ -92,8 +92,13 @@ def backup_routeros(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKU
             conn.sudo(f'mv /home/{RemoteCtlConf.REMOTE_USER}/{backup_uid}.backup {path}')
             return res.stdout
         except Exception as err:
-            print("Error")
-            return err
+            
+            return {"backup_id": backup_uid,
+            "host": host,
+            "path": path,
+            "err": repr(err)
+           
+            }
     
     return {"backup_id": backup_uid,
             "host": host,
@@ -126,7 +131,12 @@ def restore_routeros(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACK
             return res.stdout
         except Exception as err:
             print("Error")
-            return err
+            return {
+                "backup_id": backup_uid,
+                "host": host,
+                "path": path,
+                "err": repr(err)
+            }
     
     return {"backup_id": backup_uid,
             "host": host,
@@ -164,7 +174,7 @@ def restore(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR):
             "restore_cmd": backup_cmd,
             "path": path,
             "cmd_result": '',
-            "cmd_error": repr(err),
+            "err": repr(err),
             "cmd_code": 1
             }
     
@@ -211,7 +221,7 @@ def reboot(host):
             "host": host,
             "cmd": cmd,
             "cmd_result": '',
-            "cmd_error": repr(err),
+            "err": repr(err),
             "cmd_code": 1
             }
     

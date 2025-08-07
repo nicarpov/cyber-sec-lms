@@ -9,7 +9,7 @@ class Host(db.Model):
     ip: so.Mapped[str] = so.mapped_column(sa.String(15), unique=True)
     name: so.Mapped[str] = so.mapped_column(sa.String(32), unique=True)
     os_type: so.Mapped[str] = so.mapped_column(sa.String(32), default='linux', nullable=True)
-    backups: so.WriteOnlyMapped['Backup'] = so.relationship(back_populates='host', cascade='save-update, all, delete-orphan', passive_deletes=True)
+    backups: so.WriteOnlyMapped['Backup'] = so.relationship(back_populates='host', cascade='all, delete-orphan', passive_deletes=True)
 
     def __repr__(self):
         return f"<Host {self.name} ip: {self.ip}>"
@@ -17,7 +17,7 @@ class Host(db.Model):
 class Lab(db.Model):
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
     name: so.Mapped[str] = so.mapped_column(sa.String(256), unique=True)
-    saves: so.WriteOnlyMapped['Save'] = so.relationship(back_populates='lab', cascade='save-update, all, delete-orphan', passive_deletes=True)
+    saves: so.WriteOnlyMapped['Save'] = so.relationship(back_populates='lab', cascade='all, delete-orphan', passive_deletes=True)
     description: so.Mapped[str] = so.mapped_column(sa.String(1000), nullable=True)
     hidden: so.Mapped[bool] = so.mapped_column(sa.Boolean, default=False, nullable=True)
 
@@ -35,7 +35,7 @@ class Save(db.Model):
     uid: so.Mapped[str] = so.mapped_column(sa.String(36), unique=True)
     lab_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(Lab.id, ondelete='CASCADE'))
     lab: so.Mapped[Lab] = so.relationship(back_populates='saves')
-    backups: so.WriteOnlyMapped['Backup'] = so.relationship(back_populates='save', cascade='save-update, all, delete-orphan', passive_deletes=True)
+    backups: so.WriteOnlyMapped['Backup'] = so.relationship(back_populates='save', cascade='save-update, merge, delete', passive_deletes=True)
     comment: so.Mapped[str] = so.mapped_column(sa.String(256))
     is_default: so.Mapped[bool] = so.mapped_column(sa.Boolean(), default=False)
     timestamp: so.Mapped[datetime] = so.mapped_column(

@@ -209,8 +209,17 @@ def lab_delete(lab_id):
         
         lab = db.session.get(Lab, int(lab_id))
         if lab:
+            query = lab.saves.select()
+            saves = db.session.scalars(query).all()
+            for save in saves:
+                query = save.backups.select()
+                backups = db.session.scalars(query).all()
+                for backup in backups:
+                    db.session.delete(backup)
+                db.session.delete(save)
             db.session.delete(lab)
             db.session.commit()
+            print('Saves count: ', db.session.query(Save).count())
             flash("Лабораторная работа удалена: {}".format(lab.name))
             return redirect(url_for('admin'))
         else:
@@ -332,8 +341,13 @@ def host_delete(host_id):
     if form.validate_on_submit():
         host = db.session.get(Host, int(host_id))
         if host:
+            query = host.backups.select()
+            backups = db.session.scalars(query).all()
+            for backup in backups:
+                db.session.delete(backup)
             db.session.delete(host)
             db.session.commit()
+            print('Backups count: ', db.session.query(Backup).count())
             flash("Данные о хосте успешно удалены: {}".format(host.ip))
         else:
             flash("Данные хоста с id {} не обнаружены".format(host_id))
@@ -356,9 +370,10 @@ def save_create(lab_id):
         if hosts:
             lab = db.session.get(Lab, int(lab_id))
             save = Save(lab=lab, comment=lab.name, uid=str(uuid4()))
+            
             db.session.add(save)
             save.validate_default()
-            
+            print('Backups count: ', db.session.query(Backup).where(Backup.save_id == save.id).count())
             
             task_list = []
             for host in hosts:
@@ -393,8 +408,13 @@ def save_delete(save_id):
     if form.validate_on_submit():
         save = db.session.get(Save, int(save_id))
         lab_id = save.lab_id
+        query = save.backups.select()
+        backups = db.session.scalars(query).all()
+        for backup in backups:
+            db.session.delete(backup)
         db.session.delete(save)
         db.session.commit()
+        print('Backups count: ', db.session.query(Backup).where(Backup.save_id == save.id).count())
         flash("Точка сохранения успешно удалена: {}".format(save.comment))
         return redirect(url_for('lab_control', lab_id=lab_id))
     return redirect(url_for('lab_control', lab_id=lab_id))
@@ -408,6 +428,7 @@ def save_restore(save_id):
     
     if form.validate_on_submit:
         backups = db.session.scalars(save.backups.select()).all()
+        # print(backups)
         if backups:
             task_list = []
             for backup in backups:
