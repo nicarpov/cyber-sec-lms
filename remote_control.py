@@ -29,13 +29,13 @@ class SSHConn(Connection):
                     }
                 ), 
             connect_kwargs={
-                        "key_filename": conf.PKEY_PATH
+                        "key_filename": conf.PKEY_PATH,
                         }
         )
 
 
 
-def backup(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, link_path: str = "/backup/initial/"):
+def backup(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, link_path: str = None):
     """Makes backup of files in Linux-based system"""
     
     if backup_dir[-1] != '/':
@@ -50,10 +50,7 @@ def backup(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, li
     link_option = " --link-dest={}"
     link_dest = link_option.format(link_path) if link_path else ''
 
-    backup_cmd = "rsync -aAXv " \
-    "--rsync-path='mkdir {path}' " \
-    "--exclude={{'{backup_dir}*','/dev/*','/proc/*','/sys/*','/tmp/*','/run/*','/mnt/*','/media/*','/lost+found'}}" \
-    "{link_dest} /home/user/Downloads/ {path}".format(backup_dir=backup_dir, path=path, link_dest=link_dest)
+    backup_cmd = "rsync -aAXv --rsync-path='mkdir {path}' --exclude={{'/home/remote/*','/home/user/*','{backup_dir}*','/dev/*','/proc/*','/sys/*','/tmp/*','/run/*','/mnt/*','/media/*','/lost+found'}}{link_dest} / {path}".format(backup_dir=backup_dir, path=path, link_dest=link_dest)
     
     try:
         with SSHConn(host=host) as conn:
@@ -85,28 +82,17 @@ def backup_routeros(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKU
     if backup_dir[-1] != '/':
         backup_dir = backup_dir + '/'
     path = os.path.join(backup_dir, backup_uid) + ".backup"
-
-    if platform == 'win32':
-        path = Path(path).as_posix()
-    if path[-1] != '/':
-        path = path + '/'
-
-    backup_cmd = f"/system backup save name={backup_uid}.backup"
     
-    try:
-        with SSHConn(host=host) as conn:
-            result = conn.run(backup_cmd, hide=True)
-            conn.get(f"{backup_uid}.backup", path)
-        # pass
-    except Exception as err:
-        return {"backup_id": backup_uid,
-            "host": host,
-
-            "path": path,
-            "cmd_result": '',
-            "cmd_error": repr(err),
-            "cmd_code": 1
-            }
+    backup_cmd = f"/system backup save name={backup_uid}.backup"
+    with SSHConn('localhost', conf=RemoteCtlConf) as conn:
+        try:
+            res = conn.run(f'ssh {RemoteCtlConf.REMOTE_USER}@{host} {backup_cmd}', hide=True)
+            conn.run(f"scp {RemoteCtlConf.REMOTE_USER}@{host}:{backup_uid}.backup /home/{RemoteCtlConf.REMOTE_USER}/{backup_uid}.backup")
+            conn.sudo(f'mv /home/{RemoteCtlConf.REMOTE_USER}/{backup_uid}.backup {path}')
+            return res.stdout
+        except Exception as err:
+            print("Error")
+            return err
     
     return {"backup_id": backup_uid,
             "host": host,
@@ -122,27 +108,24 @@ def restore_routeros(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACK
         backup_dir = backup_dir + '/'
     path = os.path.join(backup_dir, backup_uid) + ".backup"
 
-    if platform == 'win32':
-        path = Path(path).as_posix()
-    if path[-1] != '/':
-        path = path + '/'
-
-    restore_cmd = f"/system backup load name={backup_uid}.backup"
     
-    try:
-        with SSHConn(host=host) as conn:
-            conn.put(path, f"{backup_uid}.backup")
-            result = conn.run(restore_cmd, hide=True)
+    
+
+    restore_cmd = f"/system backup load name={backup_uid}.backup password={RemoteCtlConf.REMOTE_PASS}"
+    
+    with SSHConn('localhost', conf=RemoteCtlConf) as conn:
+        try:
+            conn.sudo(f'cp {path} /home/{RemoteCtlConf.REMOTE_USER}/{backup_uid}.backup')
+            conn.sudo(f'chown {RemoteCtlConf.REMOTE_USER} /home/{RemoteCtlConf.REMOTE_USER}/{backup_uid}.backup')
+            conn.run(f"scp  /home/{RemoteCtlConf.REMOTE_USER}/{backup_uid}.backup {RemoteCtlConf.REMOTE_USER}@{host}:{backup_uid}.backup")
+            res = conn.run(f'ssh {RemoteCtlConf.REMOTE_USER}@{host} "{restore_cmd}"', hide=True)
+            conn.sudo(f'rm /home/{RemoteCtlConf.REMOTE_USER}/{backup_uid}.backup')
             
-        # pass
-    except Exception as err:
-        return {"backup_id": backup_uid,
-            "host": host,
-            "path": path,
-            "cmd_result": '',
-            "cmd_error": repr(err),
-            "cmd_code": 1
-            }
+            
+            return res.stdout
+        except Exception as err:
+            print("Error")
+            return err
     
     return {"backup_id": backup_uid,
             "host": host,
@@ -167,8 +150,8 @@ def restore(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR):
     
     print("Path: ", path)
     backup_cmd = "rsync -aAXv --delete " \
-                "--exclude={{'{backup_dir}*','/dev/*','/proc/*','/sys/*','/tmp/*','/run/*','/mnt/*','/media/*','/lost+found'}} " \
-                "{path} /home/user/Downloads/".format(path=path, backup_dir=backup_dir)
+                "--exclude={{'/home/remote/*','/home/user/*','{backup_dir}*','/dev/*','/proc/*','/sys/*','/tmp/*','/run/*','/mnt/*','/media/*','/lost+found'}} " \
+                "{path} /".format(path=path, backup_dir=backup_dir)
     
     try:
         with SSHConn(host=host) as conn:
@@ -250,14 +233,25 @@ def search_hosts(nmap_target):
     except:
         return []
         
-
+def routeros_test():
+    with SSHConn('localhost', conf=RemoteCtlConf) as conn:
+        try:
+            res = conn.run('ssh remote@192.168.1.13 "/ip address print"', hide=True)
+            return res.stdout
+        except Exception as err:
+            print("Error")
+            return err
+    
 def main():
     print(f"Connect using {RemoteCtlConf.PKEY_PATH}")
     # uid = str(uuid4())
     # res = restore(host, uid='5aff518f-de1b-40af-820d-18f3899df715')
 
     # print(res)
-    res = search_hosts('192.168.0.0/24')
+    # res = search_hosts('192.168.0.0/24')
+    uid = 'c7b154e8-315c-456f-a7b8-6f1fb0434b44'
+    # res = backup_routeros(host='192.168.1.13', backup_uid=uid)
+    res = restore_routeros(host='192.168.1.13', backup_uid="c7b154e8-315c-456f-a7b8-6f1fb0434b44")
     print(res)
 
 

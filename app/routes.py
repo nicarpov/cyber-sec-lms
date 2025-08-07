@@ -297,7 +297,7 @@ def lab_show(lab_id):
 def host_create():
     form = HostCreate()
     if form.validate_on_submit():
-        host = Host(name=form.name.data, ip=form.ip.data, os_type=form.os)
+        host = Host(name=form.name.data, ip=form.ip.data, os_type=form.os.data)
         db.session.add(host)
         db.session.commit()
         flash("Успешно зарегистрирован хост: {} IP: {}".format(host.name, host.ip))
@@ -347,7 +347,7 @@ def save_create(lab_id):
             db.session.add(save)
             save.validate_default()
             
-            backups = []
+            
             task_list = []
             for host in hosts:
                 backup_uuid = str(uuid4())
@@ -367,10 +367,6 @@ def save_create(lab_id):
                     'status': 'loading',
                     'lab_id': str(lab_id)
                 })
-            
-            
-            
-            
             
             db.session.commit()
         else:

@@ -3,6 +3,7 @@ let reboot_alert = document.getElementById('reboot-alert');
 let ready_alert = document.getElementById('ready-alert');
 let reboot_eta_alert = document.getElementById('reboot-eta-alert')
 let alerts = [loading_alert, reboot_alert, ready_alert, reboot_eta_alert]
+let ready_message = document.getElementById('ready-message')
 
 socket.onmessage = function(event) {
     let jobState = JSON.parse(event.data);
@@ -14,8 +15,10 @@ socket.onmessage = function(event) {
             hideElements(alerts)
             if (jobState["job_type"] == 'save'){
                 showElements([ready_alert])
+                ready_message.textContent = 'Состояние успешно сохранено!'
             }else if(jobState["job_type"] == 'load'){
                 showElements([reboot_alert ]);
+                ready_message.textContent = 'Состояние успешно загружено!'
             }
             
         
