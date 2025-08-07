@@ -2,7 +2,7 @@ from typing import Optional
 import sqlalchemy as sa
 import sqlalchemy.orm as so
 from app import db
-
+from datetime import datetime, timezone
 
 class Host(db.Model):
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
@@ -38,6 +38,8 @@ class Save(db.Model):
     backups: so.WriteOnlyMapped['Backup'] = so.relationship(back_populates='save', cascade='save-update, all, delete-orphan', passive_deletes=True)
     comment: so.Mapped[str] = so.mapped_column(sa.String(256))
     is_default: so.Mapped[bool] = so.mapped_column(sa.Boolean(), default=False)
+    timestamp: so.Mapped[datetime] = so.mapped_column(
+        index=True, default=lambda: datetime.now(timezone.utc), nullable=True)
 
     def validate_default(self):
         default_save = db.session.scalar(sa.select(Save).where(Save.is_default == True))

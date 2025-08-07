@@ -35,7 +35,7 @@ class SSHConn(Connection):
 
 
 
-def backup(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, link_path: str = None):
+def backup(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, link_path: str = '/backup/base/'):
     """Makes backup of files in Linux-based system"""
     
     if backup_dir[-1] != '/':

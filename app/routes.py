@@ -7,9 +7,9 @@ import sqlalchemy as sa
 from app import db
 from app import sock
 from tasks import celery_app, allIsDone, add, task_backup, task_restore, task_reboot, task_search_hosts, \
-    task_backup_routeros, task_restore_routeros
+    task_backup_routeros, task_restore_routeros, job_results
 from celery import group
-from celery.result import AsyncResult
+from celery.result import AsyncResult, GroupResult
 from test_app import MOCKED
 from uuid import uuid4
 import time
@@ -86,6 +86,7 @@ def job_state(ws):
                 status = ''
                 
                 if allIsDone(result_id):
+                    print(job_results(result_id))
                     status = 'ready'
                     state['status'] = status
                     set_job_state(state)
@@ -172,7 +173,7 @@ def lab_control(lab_id):
     lab = db.session.get(Lab, int(lab_id))
     form = EmptyForm()
     saves = db.session.scalars(sa.select(Save)
-                               .where(Save.lab_id == int(lab_id))).all()
+                               .where(Save.lab_id == int(lab_id)).order_by(Save.timestamp)).all()
     state = get_job_state()
     if state and state['status'] == 'ready':
         flush_job_state()

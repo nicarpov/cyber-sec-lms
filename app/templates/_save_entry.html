@@ -1,7 +1,7 @@
 <li class="list-group-item ">
     <div class="d-flex flex-column">
         <div class="d-flex">
-            <div class="text-muted me-3 p-1">{{ save.uid[-6:] }} </div>
+            <div class="text-muted me-3 p-1">{{ moment(save.timestamp).format('YYYY-MM-DD HH:mm')  }} </div>
             <div class="load me-2">
                 <form action="{{ url_for('save_restore', save_id=save.id) }}" method="post">
                     {{ form.hidden_tag() }}

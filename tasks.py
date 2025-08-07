@@ -18,9 +18,9 @@ celery_app = Celery('tasks',
             
             )
 
-@celery_app.on_after_configure.connect
-def setup_periodic_tasks(sender: Celery, **kwargs):
-    sender.add_periodic_task(10.0, task_search_hosts.s(rconf.SUBNET), name="Search hosts")
+# @celery_app.on_after_configure.connect
+# def setup_periodic_tasks(sender: Celery, **kwargs):
+#     sender.add_periodic_task(10.0, task_search_hosts.s(rconf.SUBNET), name="Search hosts")
 
 celery_app.config_from_object(CELERY)
 
@@ -91,6 +91,16 @@ def allIsDone(groupResId):
     except Exception as err:
         print("allIsDone Error:", err)
         return False
+
+def job_results(groupResId):
+    try:
+        groupRes = GroupResult.restore(groupResId, app=celery_app)
+        results = [r.get() for r in groupRes.results]
+        
+        return results
+    except Exception as err:
+        
+        return {'err': repr(err)}
     
 
 
