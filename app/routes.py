@@ -57,7 +57,7 @@ def admin():
             unreg_hosts.append(host)
     
     state = get_job_state()
-    if state and state['status'] == 'ready':
+    if state and state['status'] == ['ready', 'error']:
         flush_job_state()
 
     form = EmptyForm()
@@ -86,8 +86,19 @@ def job_state(ws):
                 status = ''
                 
                 if allIsDone(result_id):
-                    print(job_results(result_id))
-                    status = 'ready'
+                    res = job_results(result_id)
+                    print(res)
+                    errors = []
+                    for r in res:
+                        if 'err' in r.keys():
+                            err = f"Хост: {r['host']} -> {r['err']}"
+                            errors.append(err)
+                            status = 'error'
+                            
+                    if status != 'error':
+                        status = 'ready'
+                    else:
+                        state['err'] = json.dumps(errors)
                     state['status'] = status
                     set_job_state(state)
                     
@@ -175,7 +186,7 @@ def lab_control(lab_id):
     saves = db.session.scalars(sa.select(Save)
                                .where(Save.lab_id == int(lab_id)).order_by(Save.timestamp)).all()
     state = get_job_state()
-    if state and state['status'] == 'ready':
+    if state and state['status'] in ['ready', 'error']:
         flush_job_state()
     return render_template('lab_control.html', lab=lab, form=form, saves=saves)
 

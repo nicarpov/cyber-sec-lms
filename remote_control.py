@@ -30,7 +30,8 @@ class SSHConn(Connection):
                 ), 
             connect_kwargs={
                         "key_filename": conf.PKEY_PATH,
-                        }
+                        },
+            connect_timeout=10
         )
 
 
@@ -63,7 +64,7 @@ def backup(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, li
             "link_path": link_path or "",
             "path": path,
             "cmd_result": '',
-            "cmd_error": repr(err),
+            "err": repr(err),
             "cmd_code": 1
             }
     
