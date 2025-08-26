@@ -8,6 +8,7 @@ from flask_migrate import Migrate
 from tasks import allIsDone
 from data_access import flush_job_state, get_job_state
 from sqlalchemy import MetaData
+import sqlite3
 
 
 app = Flask(__name__)
@@ -30,6 +31,8 @@ metadata = MetaData(naming_convention=convention)
 app.config.from_object(Config)
 db = SQLAlchemy(app, metadata=metadata)
 migrate = Migrate(app, db, render_as_batch=True)
+
+
 
 from app import routes, models
 

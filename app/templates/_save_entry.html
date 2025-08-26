@@ -28,6 +28,9 @@
             </div>
         </div>
         <div class="text-body me-3 p-1">{{ save.comment }} </div>
+        {% for backup in save.get_backups() %}
+            <div class="text-body me-3 p-1">Host: {{ backup.host.ip }} -> Backup: {{ backup.uid }} </div>
+        {% endfor %}
     </div>
     
 </li>

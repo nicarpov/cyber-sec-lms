@@ -2,6 +2,7 @@ from remote_control import backup, restore, reboot
 import dotenv
 import os
 from tasks import task_reboot
+import sqlite3
 dotenv.load_dotenv()
 
 MOCKED=os.environ.get('MOCKED') or 1
@@ -46,8 +47,13 @@ def test_restore():
     assert res['backup_cmd'] == "rsync -aAXv --delete --exclude={'/backup/*','/dev/*','/proc/*','/sys/*','/tmp/*','/run/*','/mnt/*','/media/*','/lost+found'} /backup/123/ /"
 
 def main():
-    res = task_reboot.delay('localhost')
-    print(res.get())
+    # db_url = 'sqlite:///home/user/cyber-sec-lms/app.db'
+    # conn = sqlite3.connect(database=db_url)
+    # cursor = conn.cursor()
+    # cursor.execute('PRAGMA foreign_keys = ON;')
+    # conn.commit()
+    # conn.close()
+    print(sqlite3.version_info)
 
 if __name__ == "__main__":
     main()

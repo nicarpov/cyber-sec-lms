@@ -4,6 +4,7 @@ from flask import render_template, redirect, url_for, flash, request
 from app.forms import EmptyForm, HostCreate, LabCreate
 from app.models import labs, current_lab, task_id, hosts, Host, Lab, Backup, Save
 import sqlalchemy as sa
+from sqlalchemy.orm import joinedload
 from app import db
 from app import sock
 from tasks import celery_app, allIsDone, add, task_backup, task_restore, task_reboot, task_search_hosts, \
@@ -87,13 +88,14 @@ def job_state(ws):
                 
                 if allIsDone(result_id):
                     res = job_results(result_id)
-                    print(res)
+                    print('results: ', res, 'result type', type(res))
                     errors = []
                     for r in res:
-                        if 'err' in r.keys():
-                            err = f"Хост: {r['host']} -> {r['err']}"
-                            errors.append(err)
-                            status = 'error'
+                        if type(r) == dict:
+                            if 'err' in r.keys():
+                                err = f"Хост: {r['host']} -> {r['err']}"
+                                errors.append(err)
+                                status = 'error'
                             
                     if status != 'error':
                         status = 'ready'
@@ -185,6 +187,8 @@ def lab_control(lab_id):
     form = EmptyForm()
     saves = db.session.scalars(sa.select(Save)
                                .where(Save.lab_id == int(lab_id)).order_by(Save.timestamp)).all()
+    
+    
     state = get_job_state()
     if state and state['status'] in ['ready', 'error']:
         flush_job_state()

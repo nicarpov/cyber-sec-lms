@@ -52,6 +52,9 @@ class Save(db.Model):
         if default_save:
             default_save.is_default = False
         self.is_default = True
+
+    def get_backups(self):
+        return db.session.scalars(self.backups.select()).all()
         
 
 class Backup(db.Model):

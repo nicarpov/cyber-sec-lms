@@ -18,9 +18,9 @@ celery_app = Celery('tasks',
             
             )
 
-# @celery_app.on_after_configure.connect
-# def setup_periodic_tasks(sender: Celery, **kwargs):
-#     sender.add_periodic_task(10.0, task_search_hosts.s(rconf.SUBNET), name="Search hosts")
+@celery_app.on_after_configure.connect
+def setup_periodic_tasks(sender: Celery, **kwargs):
+    sender.add_periodic_task(10.0, task_search_hosts.s(rconf.SUBNET), name="Search hosts")
 
 celery_app.config_from_object(CELERY)
 
