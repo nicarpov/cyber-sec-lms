@@ -181,6 +181,7 @@ def lab_create():
         return redirect(url_for('admin'))
     return render_template('lab_create.html', form=form)
 
+
 @app.route('/lab/control/<lab_id>')
 def lab_control(lab_id):
     lab = db.session.get(Lab, int(lab_id))
@@ -246,7 +247,10 @@ def lab_start(lab_id):
         if backups:
             task_list = []
             for backup in backups:
-                task_list.append(task_restore.s(backup.host.ip, backup.uid))
+                if backup.host.os_type == 'linux':
+                    task_list.append(task_restore.s(backup.host.ip, backup.uid))
+                elif backup.host.os_type == 'routeros':
+                    task_list.append(task_restore_routeros.s(backup.host.ip, backup.uid))
             task_group = group(task_list)
             r = task_group.delay()
             r.save()

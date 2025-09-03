@@ -11,21 +11,25 @@ let reboot_eta_alert = document.getElementById('reboot-eta-alert')
 
 socket.onmessage = function(event) {
     let jobState = JSON.parse(event.data);
-    
+    console.log(jobState)
     if(jobState){
         let status = jobState['status']
         if( status == 'ready'){
-            hideElements([loading_alert])
+            hideElements([loading_alert, start_alert, reboot_alert, reboot_eta_alert])
             showElements([reboot_alert, reboot_btn ]);
 
         }else if(status == 'loading'){
-            hideElements([ready_alert, back_btn, start_btn, reboot_alert])
+            hideElements([loading_alert, start_alert, reboot_alert, reboot_eta_alert, back_btn, start_btn])
             showElements([loading_alert]);
                 
         }else if(status == 'reboot'){
-            hideElements([ready_alert, back_btn, start_btn, loading_alert, reboot_alert, reboot_btn]);
+            hideElements([loading_alert, start_alert, reboot_alert, reboot_eta_alert, back_btn, start_btn])
             showElements([reboot_eta_alert]);
+        }else if(status == 'error'){
+            hideElements([loading_alert, start_alert, reboot_alert, reboot_eta_alert, back_btn, start_btn])
+            
         }else{
+            
             showElements([start_alert, start_btn, back_btn])
         } 
   }};
