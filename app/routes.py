@@ -16,8 +16,7 @@ from uuid import uuid4
 import time
 import json
 from data_access import get_job_state, set_job_state, flush_job_state, \
-get_hosts_state, set_hosts_state, flush_hosts_state, \
-get_unreg_hosts, set_unreg_hosts
+get_unreg_hosts
 from remote_ctl_config import RemoteCtlConf as rconf
 
 web_socks = []

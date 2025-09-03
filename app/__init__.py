@@ -18,6 +18,7 @@ job_state = get_job_state()
 if job_state and allIsDone(job_state['result_id']):
     flush_job_state()
 
+
 convention = {
     "ix": 'ix_%(column_0_label)s',
     "uq": "uq_%(table_name)s_%(column_0_name)s",
