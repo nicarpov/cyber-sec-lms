@@ -18,7 +18,7 @@ import json
 from data_access import get_job_state, set_job_state, flush_job_state, \
 get_unreg_hosts
 from remote_ctl_config import RemoteCtlConf as rconf
-
+from remote_control import backup_remove
 web_socks = []
 
 # MAIN ROUTES
@@ -417,11 +417,16 @@ def save_delete(save_id):
         lab_id = save.lab_id
         query = save.backups.select()
         backups = db.session.scalars(query).all()
+        
         for backup in backups:
-            db.session.delete(backup)
+            res = backup_remove(backup.host.ip, backup.uid)
+            if not res['cmd_code']:
+                db.session.delete(backup)
+            else:
+                flash(f"Ошибка при удалении бекапа: {backup.host.ip} -> {backup.uid}")
         db.session.delete(save)
         db.session.commit()
-        print('Backups count: ', db.session.query(Backup).where(Backup.save_id == save.id).count())
+        # print('Backups count: ', db.session.query(Backup).where(Backup.save_id == save.id).count())
         flash("Точка сохранения успешно удалена: {}".format(save.comment))
         return redirect(url_for('lab_control', lab_id=lab_id))
     return redirect(url_for('lab_control', lab_id=lab_id))
