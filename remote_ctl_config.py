@@ -11,3 +11,4 @@ class RemoteCtlConf():
     SUDO_PASS = os.environ.get('SUDO_PASS') or '123'
     BACKUP_DIR =os.environ.get('REMOTE_BACKUP_DIR') or '/backup'
     SUBNET = os.environ.get('SUBNET') or '192.168.0.0/24'
+    MOCKED = os.environ.get('REMOTE_MOCKED') or 1

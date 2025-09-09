@@ -237,31 +237,36 @@ def lab_delete(lab_id):
 @app.route('/lab/start/<lab_id>', methods=['POST'])
 def lab_start(lab_id):
     form = EmptyForm()
-    
-    save = db.session.scalar(sa.select(Save).where(Save.is_default == True))
-    lab_id = save.lab_id
+    lab = db.session.get(Lab, int(lab_id))
+    # save = db.session.scalar(sa.select(Save).where(Save.is_default == True))
+    save_query = lab.saves.select().where(Save.is_default == True)
+    save = db.session.scalar(save_query)
     
     if form.validate_on_submit:
-        backups = db.session.scalars(save.backups.select()).all()
-        if backups:
-            task_list = []
-            for backup in backups:
-                if backup.host.os_type == 'linux':
-                    task_list.append(task_restore.s(backup.host.ip, backup.uid))
-                elif backup.host.os_type == 'routeros':
-                    task_list.append(task_restore_routeros.s(backup.host.ip, backup.uid))
-            task_group = group(task_list)
-            r = task_group.delay()
-            r.save()
-            set_job_state({
-                    'job_type': 'load',
-                    'result_id': r.id,
-                    'status': 'loading',
-                    'lab_id': str(lab_id)
-                })
+        if save:
+            backups = db.session.scalars(save.backups.select()).all()
+            if backups:
+                task_list = []
+                for backup in backups:
+                    if backup.host.os_type == 'linux':
+                        task_list.append(task_restore.s(backup.host.ip, backup.uid))
+                    elif backup.host.os_type == 'routeros':
+                        task_list.append(task_restore_routeros.s(backup.host.ip, backup.uid))
+                
+                task_group = group(task_list)
+                r = task_group.delay()
+                r.save()
+                set_job_state({
+                        'job_type': 'load',
+                        'result_id': r.id,
+                        'status': 'loading',
+                        'lab_id': str(lab_id)
+                    })
 
+            else:
+                flash("Ошибка! Нет бекапов для загрузки точки сохранения")
         else:
-            flash("Ошибка! Нет бекапов для загрузки точки сохранения")
+            flash("Ошибка! Нет точек сохранения")
     return redirect(url_for('lab_room', lab_id=lab_id))
 
 @app.route('/lab/finish/<lab_id>', methods=['POST'])
@@ -394,7 +399,13 @@ def save_create(lab_id):
                     task_list.append(task_backup_routeros.s(host.ip, backup.uid))
             task_group = group(task_list)
             r = task_group.delay()
-            r.save()
+            
+            
+            try:
+                r.save()
+            except AttributeError as err:
+                flash("AttributeError in save_create")
+                return redirect(url_for('lab_control', lab_id=lab_id))
             set_job_state({
                     'job_type': 'save',
                     'result_id': r.id,
