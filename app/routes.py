@@ -479,6 +479,7 @@ def save_default(save_id):
         save.set_default()
         lab_id = save.lab_id
         db.session.commit()
+        print("Save is default", save.is_default)
         flash("Установлена точка сохранения по умолчанию: {}".format(save.comment))
         return redirect(url_for('lab_control', lab_id=lab_id))
     return redirect(url_for('lab_control', lab_id=lab_id))
