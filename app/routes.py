@@ -443,7 +443,7 @@ def save_restore(save_id):
     
     save = db.session.get(Save, int(save_id))
     lab_id = save.lab_id
-    
+    print("Save restore ", save_id, " lab id ", lab_id)
     if form.validate_on_submit:
         backups = db.session.scalars(save.backups.select()).all()
         # print(backups)
