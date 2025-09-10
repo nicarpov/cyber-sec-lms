@@ -477,6 +477,7 @@ def save_default(save_id):
         save = db.session.get(Save, int(save_id))
         
         save.set_default()
+        db.session.add(save)
         lab_id = save.lab_id
         db.session.commit()
         print("Save is default", save.is_default)

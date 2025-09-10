@@ -42,13 +42,14 @@ class Save(db.Model):
         index=True, default=lambda: datetime.now(timezone.utc), nullable=True)
 
     def validate_default(self):
-        default_save = db.session.scalar(sa.select(Save).where(Save.is_default == True))
+        default_save = db.session.scalar(self.lab.saves.select().where(Save.is_default == True))
         if default_save is None:
             self.is_default = True
             
 
     def set_default(self):
-        default_save = db.session.scalar(sa.select(Save).where(Save.is_default == True))
+        
+        default_save = db.session.scalar(self.lab.saves.select().where(Save.is_default == True))
         if default_save:
             default_save.is_default = False
         self.is_default = True
