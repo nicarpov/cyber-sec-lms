@@ -59,8 +59,8 @@ def task_backup_routeros(host: str, backup_uid: str, link: str = None):
     
 
 @celery_app.task()
-def task_restore(host: str, backup_id: str):
-    return restore(host, backup_id)
+def task_restore(host: str, backup_id: str, autoreboot: bool):
+    return restore(host, backup_id, autoreboot=autoreboot)
 
 @celery_app.task()
 def task_restore_routeros(host: str, backup_id: str):

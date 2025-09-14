@@ -249,7 +249,10 @@ def lab_start(lab_id):
                 task_list = []
                 for backup in backups:
                     if backup.host.os_type == 'linux':
-                        task_list.append(task_restore.s(backup.host.ip, backup.uid))
+                        autoreboot = True
+                        if backup.host.name == 'localhost' or backup.host.ip == '127.0.0.1':
+                            autoreboot = False
+                        task_list.append(task_restore.s(backup.host.ip, backup.uid, autoreboot))
                     elif backup.host.os_type == 'routeros':
                         task_list.append(task_restore_routeros.s(backup.host.ip, backup.uid))
                 
@@ -451,9 +454,9 @@ def save_restore(save_id):
             task_list = []
             for backup in backups:
                 if backup.host.os_type == 'linux':
-                    autoreboot = False
-                    if backup.host.ip == "127.0.0.1":
-                        autoreboot = True
+                    autoreboot = True
+                    if backup.host.name == 'localhost' or backup.host.ip == '127.0.0.1':
+                        autoreboot = False
                     task_list.append(task_restore.s(backup.host.ip, backup.uid, autoreboot=autoreboot))
                 elif backup.host.os_type == 'routeros':
                     task_list.append(task_restore_routeros.s(backup.host.ip, backup.uid))
