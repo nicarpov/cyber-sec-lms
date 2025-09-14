@@ -50,10 +50,10 @@ def backup(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, li
 
     link_option = " --link-dest={}"
     link_dest = link_option.format(link_path) if link_path else ''
-    # if RemoteCtlConf.MOCKED:
-    #     source = "/etc/netplan/"
-    # else:
-    source="/"
+    if RemoteCtlConf.MOCKED:
+        source = "/etc/netplan/"
+    else:
+        source="/"
     backup_cmd = "rsync -aAXv --rsync-path='mkdir {path}' --exclude={{'/home/remote/*','/home/user/*','{backup_dir}*','/dev/*','/proc/*','/sys/*','/tmp/*','/run/*','/mnt/*','/media/*','/lost+found'}}{link_dest} {source} {path}".format(backup_dir=backup_dir, path=path, link_dest=link_dest, source=source)
     
     try:
@@ -164,10 +164,10 @@ def restore(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR):
     
     print("Path: ", path)
     dest = ""
-    # if RemoteCtlConf.MOCKED:
-    #     dest = "/etc/netplan/"
-    # else:
-    dest="/"
+    if RemoteCtlConf.MOCKED:
+        dest = "/etc/netplan/"
+    else:
+        dest="/"
     print("Restore dest ", dest)
     backup_cmd = "rsync -aAXv --delete " \
                 "--exclude={{'/home/remote/*','/home/user/*','{backup_dir}*','/dev/*','/proc/*','/sys/*','/tmp/*','/run/*','/mnt/*','/media/*','/lost+found'}} " \
