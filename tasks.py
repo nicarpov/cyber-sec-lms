@@ -105,10 +105,12 @@ def job_results(groupResId):
 
 
 if __name__ == "__main__":
-    # g = group([task_reboot.s('localhost') for i in range(4)])
+    # g = group([add.s(1,2) for i in range(4)])
     # r = g.delay()
-    r = task_search_hosts.apply_async(args=['192.168.0.0/24'])
-    print(r.get())
+    # r.save()
+    # print(r.id)
+    # r = task_search_hosts.apply_async(args=['192.168.0.0/24'])
+    print(allIsDone('1b9de5f3-f7f8-45e1-8640-44f08082a5de'))
 
 
 

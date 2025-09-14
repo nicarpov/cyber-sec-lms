@@ -48,12 +48,16 @@ def backup(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, li
     if path[-1] != '/':
         path = path + '/'
 
-    link_option = " --link-dest={}"
-    link_dest = link_option.format(link_path) if link_path else ''
+    
+    
     if RemoteCtlConf.MOCKED:
         source = "/etc/netplan/"
+        link_path = ""
     else:
         source="/"
+        
+    link_option = " --link-dest={}"
+    link_dest = link_option.format(link_path) if link_path else ''
     backup_cmd = "rsync -aAXv --rsync-path='mkdir {path}' --exclude={{'/home/remote/*','/home/user/*','{backup_dir}*','/dev/*','/proc/*','/sys/*','/tmp/*','/run/*','/mnt/*','/media/*','/lost+found'}}{link_dest} {source} {path}".format(backup_dir=backup_dir, path=path, link_dest=link_dest, source=source)
     
     try:
