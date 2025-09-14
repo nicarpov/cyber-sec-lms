@@ -202,6 +202,44 @@ def restore(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, a
             "cmd_code": result.exited
             }
 
+def backup_remove(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR):
+    """Restores backup of files in Linux-based system
+        path - path to backup dir
+    """
+    if backup_dir[-1] != '/':
+        backup_dir = backup_dir + '/'
+    path = os.path.join(backup_dir, backup_uid) + os.sep
+
+    if platform == 'win32':
+        path = Path(path).as_posix()
+    if path[-1] != '/':
+        path = path + '/'
+    
+    print("Path: ", path)
+    remove_cmd = "rm -rf {path}".format(path=path)
+    
+    try:
+        with SSHConn(host=host) as conn:
+            result = conn.sudo(remove_cmd, hide=True)
+        
+    except Exception as err:
+        return {"backup_id": backup_uid,
+            "host": host,
+            "remove_cmd": remove_cmd,
+            "path": path,
+            "cmd_result": '',
+            "err": repr(err),
+            "cmd_code": 1
+            }
+    
+    return {"backup_id": backup_uid,
+            "host": host,
+            "remove_cmd": remove_cmd,
+            "path": path,
+            "cmd_error": result.stderr,
+            "cmd_code": result.exited
+            }
+
 def isAvailable(host):
     isOnline = False
     errMsg = ''
