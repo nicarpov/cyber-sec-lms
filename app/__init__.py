@@ -9,7 +9,10 @@ from tasks import allIsDone
 from data_access import flush_job_state, get_job_state
 from sqlalchemy import MetaData
 import sqlite3
+from remote_ctl_config import RemoteCtlConf as rconf
 
+if rconf.MOCKED == True:
+    print("MOCKED STATE")
 
 app = Flask(__name__)
 sock = Sock(app)

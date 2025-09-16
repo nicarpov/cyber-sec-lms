@@ -433,11 +433,12 @@ def save_delete(save_id):
         backups = db.session.scalars(query).all()
         
         for backup in backups:
-            res = backup_remove(backup.host.ip, backup.uid)
-            if not res['cmd_code']:
-                db.session.delete(backup)
-            else:
-                flash(f"Ошибка при удалении бекапа: {backup.host.ip} -> {backup.uid}")
+            if backup.host.os_type == "linux":
+                res = backup_remove(backup.host.ip, backup.uid)
+                if not res['cmd_code']:
+                    db.session.delete(backup)
+                else:
+                    flash(f"Ошибка при удалении бекапа: {backup.host.ip} -> {backup.uid}")
         db.session.delete(save)
         db.session.commit()
         # print('Backups count: ', db.session.query(Backup).where(Backup.save_id == save.id).count())

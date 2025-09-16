@@ -36,7 +36,7 @@ class SSHConn(Connection):
 
 
 
-def backup(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, link_path: str = '/backup/base/'):
+def backup(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, link_path: str = '/backup/base/', mocked: bool = True):
     """Makes backup of files in Linux-based system"""
     
     if backup_dir[-1] != '/':
@@ -48,13 +48,11 @@ def backup(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, li
     if path[-1] != '/':
         path = path + '/'
 
-    
-    
-    if RemoteCtlConf.MOCKED:
-        source = "/etc/netplan/"
-        link_path = ""
-    else:
-        source="/"
+    # if mocked:
+    #     source = "/etc/netplan/"
+    #     link_path = ""
+    # else:
+    source="/"
         
     link_option = " --link-dest={}"
     link_dest = link_option.format(link_path) if link_path else ''
@@ -153,7 +151,7 @@ def restore_routeros(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACK
             }
 
 
-def restore(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, autoreboot=False):
+def restore(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, autoreboot=False, mocked: bool = True):
     """Restores backup of files in Linux-based system
         path - path to backup dir
     """
@@ -168,10 +166,11 @@ def restore(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, a
     
     print("Path: ", path)
     dest = ""
-    if RemoteCtlConf.MOCKED:
-        dest = "/etc/netplan/"
-    else:
-        dest="/"
+    # if mocked:
+    #     dest = "/home/"
+    #     path = "/"
+    # else:
+    dest="/"
     print("Restore dest ", dest)
     backup_cmd = "rsync -aAXv --delete " \
                 "--exclude={{'/home/remote/*','/home/user/*','{backup_dir}*','/dev/*','/proc/*','/sys/*','/tmp/*','/run/*','/mnt/*','/media/*','/lost+found'}} " \
@@ -182,7 +181,7 @@ def restore(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, a
             result = conn.sudo(backup_cmd, hide=True)
             if autoreboot:
                 print("Autoreboot!!!")
-                conn.sudo("shutdown -r", hide=True)
+                conn.sudo("shutdown -r now", hide=True)
         
     except Exception as err:
         return {"backup_id": backup_uid,

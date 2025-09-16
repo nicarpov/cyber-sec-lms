@@ -51,7 +51,7 @@ def task_reboot(host):
 
 @celery_app.task()
 def task_backup(host: str, backup_uid: str, link: str = None):
-    return backup(host=host, backup_uid=backup_uid, backup_dir=rconf.BACKUP_DIR)
+    return backup(host=host, backup_uid=backup_uid, backup_dir=rconf.BACKUP_DIR, mocked=rconf.MOCKED)
 
 @celery_app.task()
 def task_backup_routeros(host: str, backup_uid: str, link: str = None):
@@ -60,7 +60,7 @@ def task_backup_routeros(host: str, backup_uid: str, link: str = None):
 
 @celery_app.task()
 def task_restore(host: str, backup_id: str, autoreboot: bool):
-    return restore(host, backup_id, autoreboot=autoreboot)
+    return restore(host, backup_id, autoreboot=autoreboot, mocked=rconf.MOCKED)
 
 @celery_app.task()
 def task_restore_routeros(host: str, backup_id: str):
