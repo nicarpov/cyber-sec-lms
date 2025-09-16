@@ -181,7 +181,7 @@ def restore(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, a
             result = conn.sudo(backup_cmd, hide=True)
             if autoreboot:
                 print("Autoreboot!!!")
-                conn.sudo("shutdown -r now", hide=True)
+                conn.sudo("shutdown -r", hide=True)
         
     except Exception as err:
         return {"backup_id": backup_uid,
