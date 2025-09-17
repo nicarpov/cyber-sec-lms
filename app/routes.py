@@ -73,20 +73,28 @@ def job_state(ws):
     'lab_id': 123
     }
     '''
-    
+    i = 0
     while True:
         
         state = get_job_state()
+        # print("Get state")
+        print(state) 
         if state:
-            
+            print("State ", i)
+            i = i + 1
             status = state['status']
             if status == 'loading':
                 result_id = state['result_id']
                 
                 status = ''
-                
-                if allIsDone(result_id):
+                print("Before allIsdone")
+                done = allIsDone(result_id)
+                print("DONE:", done)
+                if done:
+                    print("Inside allIsdone")
+                    print("DONE:", done)
                     res = job_results(result_id)
+                    
                     print('results: ', res, 'result type', type(res))
                     errors = []
                     for r in res:
@@ -103,7 +111,7 @@ def job_state(ws):
                     state['status'] = status
                     set_job_state(state)
                     
-                    
+          
         ws.send(json.dumps(state))
         time.sleep(1)
 
@@ -163,7 +171,7 @@ def reboot():
             state['status'] = 'reboot'
             set_job_state(state)
             
-            task_reboot.apply_async(args=['127.0.0.1'], countdown=5)
+            task_reboot.apply_async(args=['127.0.0.1'])
             return redirect(url_for('lab_room', lab_id=state['lab_id']))
         else:
             return redirect(url_for('index'))
@@ -252,7 +260,7 @@ def lab_start(lab_id):
                         autoreboot = True
                         if backup.host.name == 'localhost' or backup.host.ip == '127.0.0.1':
                             autoreboot = False
-                        task_list.append(task_restore.s(backup.host.ip, backup.uid, autoreboot))
+                        task_list.append(task_restore.s(host=backup.host.ip, backup_id=backup.uid, autoreboot=autoreboot))
                     elif backup.host.os_type == 'routeros':
                         task_list.append(task_restore_routeros.s(backup.host.ip, backup.uid))
                 

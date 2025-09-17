@@ -31,7 +31,7 @@ class SSHConn(Connection):
             connect_kwargs={
                         "key_filename": conf.PKEY_PATH,
                         },
-            connect_timeout=10
+            connect_timeout=30
         )
 
 
@@ -172,30 +172,32 @@ def restore(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, a
     # else:
     dest="/"
     print("Restore dest ", dest)
-    backup_cmd = "rsync -aAXv --delete " \
+    restore_cmd = "rsync -aAXv --delete " \
                 "--exclude={{'/home/remote/*','/home/user/*','{backup_dir}*','/dev/*','/proc/*','/sys/*','/tmp/*','/run/*','/mnt/*','/media/*','/lost+found'}} " \
                 "{path} {dest}".format(path=path, backup_dir=backup_dir, dest=dest)
     
-    try:
-        with SSHConn(host=host) as conn:
-            result = conn.sudo(backup_cmd, hide=True)
+    result = {}
+    with SSHConn(host=host) as conn:
+        try:
+            result = conn.sudo(restore_cmd, hide=True)
             if autoreboot:
                 print("Autoreboot!!!")
-                conn.sudo("shutdown -r", hide=True)
+                conn.sudo("shutdown -r +1", hide=True)
+        except Exception as err:
+            return {"backup_id": backup_uid,
+                "host": host,
+                "restore_cmd": restore_cmd,
+                "path": path,
+                "cmd_result": '',
+                "err": repr(err),
+                "cmd_code": 1
+                }
         
-    except Exception as err:
-        return {"backup_id": backup_uid,
-            "host": host,
-            "restore_cmd": backup_cmd,
-            "path": path,
-            "cmd_result": '',
-            "err": repr(err),
-            "cmd_code": 1
-            }
+    
     
     return {"backup_id": backup_uid,
             "host": host,
-            "backup_cmd": backup_cmd,
+            "restore_cmd": restore_cmd,
             "path": path,
             "cmd_error": result.stderr,
             "cmd_code": result.exited
@@ -262,7 +264,7 @@ def isAvailable(host):
     
 
 def reboot(host):
-    cmd = f"shutdown -r"
+    cmd = f"shutdown -r +1"
     try:
         with SSHConn(host=host) as conn:
             # print('SSHConn', conn.config.sudo)
