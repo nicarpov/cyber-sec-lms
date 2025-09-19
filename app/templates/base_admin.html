@@ -11,6 +11,7 @@
     {% else %}
         <title>LMS</title>
     {% endif %}
+    <link rel="icon" href="{{ url_for('static', filename='icons/lms-icon.svg') }}" type="image/x-icon">
 </head>
 <body>
     <div id="container" class="container justify-content-center">
@@ -51,7 +52,8 @@
     
     <script src="{{ url_for('static', filename='bootstrap/bootstrap.bundle.min.js') }}"></script>
     
-    {{ moment.include_moment() }}
+    <!-- {{ moment.include_moment() }} -->
+    <script src=" {{ url_for('static', filename='js/moment-with-locales.min.js')}}"></script>
     <script src=" {{ url_for('static', filename='js/stateMonitoring.js')}}"></script>
     <script src=" {{ url_for('static', filename='js/admin.js')}}"></script>
 </body>

@@ -7,7 +7,20 @@ let alerts = [loading_alert, reboot_alert, ready_alert, reboot_eta_alert, error_
 let ready_message = document.getElementById('ready-message')
 let error_message = document.getElementById('error-message')
 
-socket.onmessage = function(event) {
+let socket = new WebSocket("ws://localhost:5000/ws/job_state" );
+
+socket.onclose = function(event){
+    if (event.wasClean){
+        console.log("Clean close");
+    }else{
+        console.log("Not clean close");
+    }
+}
+
+
+
+function setupSocket(socket){
+    socket.onmessage = function(event) {
     let jobState = JSON.parse(event.data);
     // console.log(jobState)
     if(jobState){
@@ -55,10 +68,13 @@ socket.onmessage = function(event) {
         }else{
 
         } 
-  }else{
-    hideElements(alerts)
-  }};
+    }else{
+        hideElements(alerts)
+    }
+    };
+}
           
+setupSocket(socket);
 
 function hideElements(elements){
     for (let el of elements){

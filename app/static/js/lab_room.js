@@ -8,6 +8,20 @@ let ready_alert = document.getElementById('ready-alert');
 let reboot_eta_alert = document.getElementById('reboot-eta-alert')
 // hideElements([loading_alert, start_alert, start_btn, back_btn])
 
+let socket = new WebSocket("ws://localhost:5000/ws/job_state" );
+
+socket.onclose = function(event){
+    if (event.wasClean){
+        console.log("Clean close");
+    }else{
+        console.log("Not clean close");
+    }
+}
+
+socket.onerror = function(error){
+    
+    socket = new WebSocket("ws://localhost:5000/ws/job_state" );
+}
 
 socket.onmessage = function(event) {
     let jobState = JSON.parse(event.data);

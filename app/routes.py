@@ -78,7 +78,7 @@ def job_state(ws):
         
         state = get_job_state()
         # print("Get state")
-        print(state) 
+        # print(state) 
         if state:
             print("State ", i)
             i = i + 1
@@ -114,6 +114,10 @@ def job_state(ws):
           
         ws.send(json.dumps(state))
         time.sleep(1)
+        # print(i)
+        # i += 1
+        # ws.send(json.dumps("Hello"))
+        # time.sleep(1)
 
 # @sock.route('/ws/hosts_state')
 # def hosts_state(ws):
@@ -175,6 +179,7 @@ def reboot():
             return redirect(url_for('lab_room', lab_id=state['lab_id']))
         else:
             return redirect(url_for('index'))
+        
 
 # LAB ROUTES
 @app.route('/lab/create', methods=['GET', 'POST'])
