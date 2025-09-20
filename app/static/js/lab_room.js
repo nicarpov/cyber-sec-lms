@@ -18,10 +18,6 @@ socket.onclose = function(event){
     }
 }
 
-socket.onerror = function(error){
-    
-    socket = new WebSocket("ws://localhost:5000/ws/job_state" );
-}
 
 socket.onmessage = function(event) {
     let jobState = JSON.parse(event.data);

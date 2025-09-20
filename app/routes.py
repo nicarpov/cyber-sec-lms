@@ -74,21 +74,25 @@ def job_state(ws):
     }
     '''
     i = 0
+    results = {}
     while True:
         
         state = get_job_state()
-        # print("Get state")
-        # print(state) 
+        print("Get state")
+        print(state) 
         if state:
             print("State ", i)
-            i = i + 1
+            
             status = state['status']
             if status == 'loading':
                 result_id = state['result_id']
+                if not results:
+                    results = GroupResult.restore(result_id, backend=celery_app.backend)
                 
                 status = ''
                 print("Before allIsdone")
-                done = allIsDone(result_id)
+                print("id", result_id)
+                done = allIsDone(results.results)
                 print("DONE:", done)
                 if done:
                     print("Inside allIsdone")
@@ -107,17 +111,17 @@ def job_state(ws):
                     if status != 'error':
                         status = 'ready'
                     else:
+                        print("Send errors")
                         state['err'] = json.dumps(errors)
+
                     state['status'] = status
                     set_job_state(state)
                     
           
         ws.send(json.dumps(state))
         time.sleep(1)
-        # print(i)
-        # i += 1
-        # ws.send(json.dumps("Hello"))
-        # time.sleep(1)
+        print(i)
+        i += 1
 
 # @sock.route('/ws/hosts_state')
 # def hosts_state(ws):

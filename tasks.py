@@ -51,6 +51,7 @@ def task_reboot(host):
 
 @celery_app.task()
 def task_backup(host: str, backup_uid: str, link: str = None):
+    
     return backup(host=host, backup_uid=backup_uid, backup_dir=rconf.BACKUP_DIR, mocked=rconf.MOCKED)
 
 @celery_app.task()
@@ -60,6 +61,7 @@ def task_backup_routeros(host: str, backup_uid: str, link: str = None):
 
 @celery_app.task()
 def task_restore(host: str, backup_id: str, autoreboot: bool):
+    
     return restore(host, backup_id, autoreboot=autoreboot, mocked=rconf.MOCKED)
 
 @celery_app.task()
@@ -81,21 +83,25 @@ def task_search_hosts(nmap_target):
     set_unreg_hosts(unreg_hosts)
     return unreg_hosts
 
-def allIsDone(groupResId):
+def allIsDone(results):
     try:
-        groupRes = GroupResult.restore(groupResId, app=celery_app)
-        results = groupRes.results
+        
+        
+        print("res", results)
+        print("3")
         tasks_num = len(results)
+        print("4")
         ready_num = len(list(filter(lambda t: t.ready(), results)))
+        print("5")
         return ready_num == tasks_num
     except Exception as err:
         print("allIsDone Error:", err)
-        return False
+        return {"error": str(err)}
 
-def job_results(groupResId):
+def job_results(results):
     try:
-        groupRes = GroupResult.restore(groupResId, app=celery_app)
-        results = [r.get() for r in groupRes.results]
+        
+        results = [r.get() for r in results]
         
         return results
     except Exception as err:
@@ -109,8 +115,25 @@ if __name__ == "__main__":
     # r = g.delay()
     # r.save()
     # print(r.id)
+
+
     # r = task_search_hosts.apply_async(args=['192.168.0.0/24'])
-    print(allIsDone('1b9de5f3-f7f8-45e1-8640-44f08082a5de'))
+    # print(allIsDone('2a6d3251-e897-4aef-92e5-92af9d050a24'))
+
+
+    # tasks = []
+    # for i in range(10):
+    #     tasks.append(add.s(i,i))
+    # task_group = group(tasks)
+    # r = task_group.delay()
+    # r.save()
+    # print(r.id)
+
+
+    res = GroupResult.restore('bdbab130-53c0-4c75-9457-334c35c30f17', app=celery_app)
+    print(res)
+    ready = allIsDone(res.results)
+    print(ready)
 
 
 
