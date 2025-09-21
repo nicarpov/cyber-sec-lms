@@ -7,7 +7,7 @@ let alerts = [loading_alert, reboot_alert, ready_alert, reboot_eta_alert, error_
 let ready_message = document.getElementById('ready-message')
 let error_message = document.getElementById('error-message')
 
-let socket = new WebSocket("ws://localhost:5000/ws/job_state" );
+
 
 socket.onclose = function(event){
     if (event.wasClean){
@@ -20,8 +20,10 @@ socket.onclose = function(event){
 
 
 function setupSocket(socket){
+    
     socket.onmessage = function(event) {
     let jobState = JSON.parse(event.data);
+    
     // console.log(jobState)
     if(jobState){
         let status = jobState['status']

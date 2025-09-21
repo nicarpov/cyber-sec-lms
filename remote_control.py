@@ -173,7 +173,7 @@ def restore(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, a
     dest="/"
     print("Restore dest ", dest)
     restore_cmd = "rsync -aAXv --delete " \
-                "--exclude={{'/home/remote/*','/home/user/*','{backup_dir}*','/dev/*','/proc/*','/sys/*','/tmp/*','/run/*','/mnt/*','/media/*','/lost+found'}} " \
+                "--exclude={{'/home/student/snap/firefox/*','/usr/bin/firefox','/usr/bin/supervisorctl','/usr/bin/wireshark','/etc/supervisor/*','/etc/nginx/*','/etc/firefox/','/etc/wireshark/*','/home/remote/*','/home/user/*','{backup_dir}*','/dev/*','/proc/*','/sys/*','/tmp/*','/run/*','/mnt/*','/media/*','/lost+found'}} " \
                 "{path} {dest}".format(path=path, backup_dir=backup_dir, dest=dest)
     
     result = {}
@@ -202,6 +202,10 @@ def restore(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, a
             "cmd_error": result.stderr,
             "cmd_code": result.exited
             }
+def routeros_backup_remove(backup_uid: str):
+    
+    return backup_remove('127.0.0.1',backup_uid)
+    
 
 def backup_remove(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR):
     """Restores backup of files in Linux-based system

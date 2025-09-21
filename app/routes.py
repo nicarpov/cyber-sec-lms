@@ -18,7 +18,7 @@ import json
 from data_access import get_job_state, set_job_state, flush_job_state, \
 get_unreg_hosts
 from remote_ctl_config import RemoteCtlConf as rconf
-from remote_control import backup_remove
+from remote_control import backup_remove, routeros_backup_remove
 web_socks = []
 
 # MAIN ROUTES
@@ -74,7 +74,7 @@ def job_state(ws):
     }
     '''
     i = 0
-    results = {}
+    resultsGroup = {}
     while True:
         
         state = get_job_state()
@@ -86,19 +86,19 @@ def job_state(ws):
             status = state['status']
             if status == 'loading':
                 result_id = state['result_id']
-                if not results:
-                    results = GroupResult.restore(result_id, backend=celery_app.backend)
+                if not resultsGroup:
+                    resultsGroup = GroupResult.restore(result_id, backend=celery_app.backend)
                 
                 status = ''
                 print("Before allIsdone")
                 print("id", result_id)
-                done = allIsDone(results.results)
+                done = allIsDone(resultsGroup.results)
                 print("DONE:", done)
                 if done:
                     print("Inside allIsdone")
                     print("DONE:", done)
-                    res = job_results(result_id)
                     
+                    res = job_results(resultsGroup.results)
                     print('results: ', res, 'result type', type(res))
                     errors = []
                     for r in res:
@@ -399,6 +399,7 @@ def save_create(lab_id):
     
     if form.validate_on_submit:
         hosts = db.session.scalars(sa.select(Host)).all()
+        print("Hosts: ",hosts)
         if hosts:
             lab = db.session.get(Lab, int(lab_id))
             save = Save(lab=lab, comment=lab.name, uid=str(uuid4()))
@@ -412,11 +413,13 @@ def save_create(lab_id):
                 backup_uuid = str(uuid4())
                 print("Host ",host.ip, "buid ", backup_uuid)
                 backup = Backup(save=save, host=host, comment=lab.name, uid=backup_uuid, dir=rconf.BACKUP_DIR)
-                db.session.add(backup)
+                
                 if host.os_type == 'linux':
                     task_list.append(task_backup.s(host.ip, backup.uid))
+                    db.session.add(backup)
                 elif host.os_type == 'routeros':
                     task_list.append(task_backup_routeros.s(host.ip, backup.uid))
+                    db.session.add(backup)
             task_group = group(task_list)
             r = task_group.delay()
             
@@ -452,10 +455,11 @@ def save_delete(save_id):
         for backup in backups:
             if backup.host.os_type == "linux":
                 res = backup_remove(backup.host.ip, backup.uid)
-                if not res['cmd_code']:
-                    db.session.delete(backup)
-                else:
+                if res['cmd_code']:
                     flash(f"Ошибка при удалении бекапа: {backup.host.ip} -> {backup.uid}")
+            else:
+                routeros_backup_remove(backup.uid)
+            db.session.delete(backup)
         db.session.delete(save)
         db.session.commit()
         # print('Backups count: ', db.session.query(Backup).where(Backup.save_id == save.id).count())
