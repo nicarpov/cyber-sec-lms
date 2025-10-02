@@ -18,6 +18,22 @@ def get_job_state():
     with redis_conn() as conn:
         return conn.hgetall('job_state')
     
+def get_platform_state():
+    '''
+    redis key - "job_state"
+    state = {
+    'result_id' : uuid,
+    'status': loading|ready,
+    'lab_id': 123
+    }
+    '''
+    with redis_conn() as conn:
+        return conn.hgetall('platform_state')
+    
+def set_platform_state(state):
+    with redis_conn() as conn:
+        return conn.hset('platform_state', mapping=state)
+    
 def set_job_state(state):
     with redis_conn() as conn:
         return conn.hset('job_state', mapping=state)

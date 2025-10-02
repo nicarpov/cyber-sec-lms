@@ -8,7 +8,7 @@ from sqlalchemy.orm import joinedload
 from app import db
 from app import sock
 from tasks import celery_app, allIsDone, add, task_backup, task_restore, task_reboot, task_search_hosts, \
-    task_backup_routeros, task_restore_routeros, job_results
+    task_backup_routeros, task_restore_routeros, job_results, task_run_cmd_set
 from celery import group
 from celery.result import AsyncResult, GroupResult
 from test_app import MOCKED
@@ -16,7 +16,7 @@ from uuid import uuid4
 import time
 import json
 from data_access import get_job_state, set_job_state, flush_job_state, \
-get_unreg_hosts
+get_unreg_hosts, set_platform_state, get_platform_state
 from remote_ctl_config import RemoteCtlConf as rconf
 from remote_control import backup_remove, routeros_backup_remove
 web_socks = []
@@ -31,7 +31,14 @@ def index():
         return redirect(url_for('lab_room', lab_id=state['lab_id']))
 
     lab_list = db.session.scalars(sa.select(Lab).where(Lab.hidden == False).order_by(Lab.name))
-    return render_template('index.html', labs=lab_list)
+    platform_state = get_platform_state()
+    last_lab_id = -1
+    if "last_lab_id" in platform_state:
+        last_lab_id = platform_state['last_lab_id']
+    last_lab = {}
+    if last_lab_id:
+        last_lab = db.session.get(Lab, last_lab_id)
+    return render_template('index.html', labs=lab_list, last_lab = last_lab)
 
 @app.route('/login')
 def login():
@@ -59,9 +66,15 @@ def admin():
     state = get_job_state()
     if state and state['status'] == ['ready', 'error']:
         flush_job_state()
-
+    platform_state = get_platform_state()
+    last_lab_id = -1
+    if "last_lab_id" in platform_state:
+        last_lab_id = platform_state['last_lab_id']
+    last_lab = {}
+    if last_lab_id:
+        last_lab = db.session.get(Lab, last_lab_id)
     form = EmptyForm()
-    return render_template('admin.html', labs=labs, hosts=hosts, unreg_hosts=unreg_hosts, form=form)
+    return render_template('admin.html', labs=labs, hosts=hosts, unreg_hosts=unreg_hosts, last_lab = last_lab, form=form)
 
 @sock.route('/ws/job_state')
 def job_state(ws):
@@ -78,10 +91,10 @@ def job_state(ws):
     while True:
         
         state = get_job_state()
-        print("Get state")
-        print(state) 
+        #print("Get state")
+        #print(state) 
         if state:
-            print("State ", i)
+            #print("State ", i)
             
             status = state['status']
             if status == 'loading':
@@ -90,16 +103,16 @@ def job_state(ws):
                     resultsGroup = GroupResult.restore(result_id, backend=celery_app.backend)
                 
                 status = ''
-                print("Before allIsdone")
-                print("id", result_id)
+                #print("Before allIsdone")
+                #print("id", result_id)
                 done = allIsDone(resultsGroup.results)
-                print("DONE:", done)
+                #print("DONE:", done)
                 if done:
-                    print("Inside allIsdone")
-                    print("DONE:", done)
+                    #print("Inside allIsdone")
+                    #print("DONE:", done)
                     
                     res = job_results(resultsGroup.results)
-                    print('results: ', res, 'result type', type(res))
+                    #print('results: ', res, 'result type', type(res))
                     errors = []
                     for r in res:
                         if type(r) == dict:
@@ -108,10 +121,11 @@ def job_state(ws):
                                 errors.append(err)
                                 status = 'error'
                             
+                            
                     if status != 'error':
                         status = 'ready'
                     else:
-                        print("Send errors")
+                        #print("Send errors")
                         state['err'] = json.dumps(errors)
 
                     state['status'] = status
@@ -120,7 +134,7 @@ def job_state(ws):
           
         ws.send(json.dumps(state))
         time.sleep(1)
-        print(i)
+        #print(i)
         i += 1
 
 # @sock.route('/ws/hosts_state')
@@ -267,9 +281,18 @@ def lab_start(lab_id):
                 for backup in backups:
                     if backup.host.os_type == 'linux':
                         autoreboot = True
+                        preset = []
                         if backup.host.name == 'localhost' or backup.host.ip == '127.0.0.1':
+                            platform_state = get_platform_state()
+                            print("platform state: ", platform_state)
+                            if "last_lab_id" in platform_state and int(platform_state["last_lab_id"]) == 5:
+                                print("last_lab id: ", platform_state["last_lab_id"])
+                                preset = ['systemctl stop wazuh-indexer', 'systemctl stop wazuh-manager', 'systemctl stop wazuh-dashboard']
+                                
+                            else:
+                                set_platform_state({"last_lab_id": save.lab_id})
                             autoreboot = False
-                        task_list.append(task_restore.s(host=backup.host.ip, backup_id=backup.uid, autoreboot=autoreboot))
+                        task_list.append(task_restore.s(host=backup.host.ip, backup_id=backup.uid, autoreboot=autoreboot, preset=preset))
                     elif backup.host.os_type == 'routeros':
                         task_list.append(task_restore_routeros.s(backup.host.ip, backup.uid))
                 
@@ -481,10 +504,17 @@ def save_restore(save_id):
             task_list = []
             for backup in backups:
                 if backup.host.os_type == 'linux':
-                    autoreboot = True
-                    if backup.host.name == 'localhost' or backup.host.ip == '127.0.0.1':
-                        autoreboot = False
-                    task_list.append(task_restore.s(backup.host.ip, backup.uid, autoreboot=autoreboot))
+                        autoreboot = True
+                        preset = []
+                        if backup.host.name == 'localhost' or backup.host.ip == '127.0.0.1':
+                            platform_state = get_platform_state()
+                            if "last_lab_id" in platform_state and int(platform_state["last_lab_id"]) == 5:
+                                preset = ['systemctl stop wazuh-indexer', 'systemctl stop wazuh-manager', 'systemctl stop wazuh-dashboard']
+                            else:
+                                set_platform_state({"last_lab_id": save.lab_id})
+                                
+                            autoreboot = False
+                        task_list.append(task_restore.s(host=backup.host.ip, backup_id=backup.uid, autoreboot=autoreboot, preset=preset))
                 elif backup.host.os_type == 'routeros':
                     task_list.append(task_restore_routeros.s(backup.host.ip, backup.uid))
                 

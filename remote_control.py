@@ -151,7 +151,8 @@ def restore_routeros(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACK
             }
 
 
-def restore(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, autoreboot=False, mocked: bool = True):
+def restore(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, autoreboot=False, mocked: bool = True, preset = []):
+    
     """Restores backup of files in Linux-based system
         path - path to backup dir
     """
@@ -179,6 +180,10 @@ def restore(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, a
     result = {}
     with SSHConn(host=host) as conn:
         try:
+            if preset:
+                for cmd in preset:
+                    conn.sudo(cmd, hide=True)
+                    print("PRESET Cmd ", cmd, " executed")
             result = conn.sudo(restore_cmd, hide=True)
             if autoreboot:
                 print("Autoreboot!!!")
@@ -200,7 +205,8 @@ def restore(host, backup_uid: str, backup_dir: str = RemoteCtlConf.BACKUP_DIR, a
             "restore_cmd": restore_cmd,
             "path": path,
             "cmd_error": result.stderr,
-            "cmd_code": result.exited
+            "cmd_code": result.exited,
+            "preset": preset
             }
 def routeros_backup_remove(backup_uid: str):
     
@@ -273,6 +279,34 @@ def reboot(host):
         with SSHConn(host=host) as conn:
             # print('SSHConn', conn.config.sudo)
             result = conn.sudo(cmd, hide=True)
+            # print('reboot res:', result)
+        
+    except Exception as err:
+        return {
+            "host": host,
+            "cmd": cmd,
+            "cmd_result": '',
+            "err": repr(err),
+            "cmd_code": 1
+            }
+    
+    return {
+            "host": host,
+            "cmd": cmd,
+            "cmd_result": '',
+            "cmd_code": 0
+            }
+
+def run_cmd_set(host, set):
+    
+    try:
+        with SSHConn(host=host) as conn:
+            # print('SSHConn', conn.config.sudo)
+            cmd = ''
+            for c in set:
+                cmd = c
+                conn.sudo(cmd, hide=True)
+                
             # print('reboot res:', result)
         
     except Exception as err:

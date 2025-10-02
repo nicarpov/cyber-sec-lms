@@ -26,6 +26,15 @@
             {% endif %}
         {% endwith %}
         <div class="header-top h2 mt-5">Панель администратора учебной платформы</div>
+        {% if last_lab %}
+            <div class="alert alert-light">
+                В прошлый раз выполнялась работа: {{ last_lab.name }}
+            </div> 
+        {% else %}
+            <div class="alert alert-light">
+                Лабораторных работ не выполнялось
+            </div>
+        {% endif %}
         <div id="loading-alert" class="alert alert-danger hidden">
             <strong>ОСТОРОЖНО!</strong> Выполняется подготовка систем. 
             Не отключайте питание устройств. 
